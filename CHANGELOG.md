@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.1...v0.1.2) (2026-09-12)
+
+### Features
+
+* **format:** decode and audition a character's voices ([2d4a490](https://github.com/hoardodile/plugin-2d-frame/commit/2d4a49062c96cdd73b811fae270fa6cb28c955ff))
+* icon badges for clip and sound-event counts on the resource card ([70cc964](https://github.com/hoardodile/plugin-2d-frame/commit/70cc9643089cb26a5aa71b9123a4dd8627d86a9c))
+
 ## [0.1.1](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.0...v0.1.1) (2026-09-11)
 
 ### Bug Fixes
