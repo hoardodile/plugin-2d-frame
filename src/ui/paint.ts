@@ -147,11 +147,37 @@ export const paintClipFrame = (
 				: undefined
 			context.save()
 			context.globalAlpha = layer.opacity ?? 1
-			context.translate(
-				snap(props.origin[0] + tx * props.pixelsPerUnit),
-				snap(props.origin[1] - ty * props.pixelsPerUnit),
-			)
-			context.transform(a, -b, -c, d, 0, 0)
+			const x = props.origin[0] + tx * props.pixelsPerUnit
+			const y = props.origin[1] - ty * props.pixelsPerUnit
+			const left = -layer.sprite.pivot[0] * source[2] * unit
+			const top = -(1 - layer.sprite.pivot[1]) * source[3] * unit
+			let drawLeft = left
+			let drawTop = top
+			let drawWidth = source[2] * unit
+			let drawHeight = source[3] * unit
+			if (b === 0 && c === 0) {
+				// Snap the transformed edges, including the pivot offset. Snapping
+				// just the pivot leaves adjacent quads on fractional pixels, where
+				// canvas edge coverage exposes hairlines even with smoothing off.
+				// Serialized float noise must not split a shared half-pixel edge.
+				const edge = (value: number) =>
+					Math.round(Math.round(value * props.ratio * 1e4) / 1e4) / props.ratio
+				const startX = edge(x + a * left)
+				const startY = edge(y + d * top)
+				const endX = edge(x + a * (left + drawWidth))
+				const endY = edge(y + d * (top + drawHeight))
+				context.translate(startX, startY)
+				context.scale(Math.sign(a), Math.sign(d))
+				drawLeft = 0
+				drawTop = 0
+				drawWidth = Math.abs(endX - startX)
+				drawHeight = Math.abs(endY - startY)
+			} else {
+				// Preserve relative positions through rotation and shear; rounding
+				// each layer's pivot independently can pull joined pieces apart.
+				context.translate(x, y)
+				context.transform(a, -b, -c, d, 0, 0)
+			}
 			const deviceScale =
 				Math.min(Math.hypot(a, b), Math.hypot(c, d)) * unit * props.ratio
 			context.imageSmoothingEnabled =
@@ -164,10 +190,10 @@ export const paintClipFrame = (
 				tinted ? 0 : source[1],
 				source[2],
 				source[3],
-				-layer.sprite.pivot[0] * source[2] * unit,
-				-(1 - layer.sprite.pivot[1]) * source[3] * unit,
-				source[2] * unit,
-				source[3] * unit,
+				drawLeft,
+				drawTop,
+				drawWidth,
+				drawHeight,
 			)
 			context.restore()
 			continue
