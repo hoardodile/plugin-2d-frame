@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.3](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.2...v0.1.3) (2026-09-13)
+
+### Bug Fixes
+
+* **player:** support affine frames and consistent display sizing ([514c277](https://github.com/hoardodile/plugin-2d-frame/commit/514c277df107edb2e5a75dd50ab2fc8070bafff6))
+
 ## [0.1.2](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.1...v0.1.2) (2026-09-12)
 
 ### Features
