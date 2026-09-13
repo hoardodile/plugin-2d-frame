@@ -28,6 +28,16 @@ export const PREF_MODE = "view.mode"
 export const PREF_LOOP = "viewer.loop"
 export const PREF_AUTO_NEXT = "viewer.autoNext"
 export const PREF_SOUND = "viewer.sound"
+export const PREF_REDUCED_SIZE = "viewer.reducedSize"
+
+/** A display preference; missing clip annotations continue to use the authored size. */
+export const useReducedSizePref = (): readonly [
+	boolean,
+	(value: boolean) => void,
+] => {
+	const api = usePluginAPI()
+	return api.usePref(PREF_REDUCED_SIZE, true, BOOLEAN)
+}
 
 /**
  * The view is a two-value string, so a value the viewer did not write is a

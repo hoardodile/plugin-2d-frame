@@ -16,6 +16,9 @@ export default {
 	"controls.play": "Abspielen",
 	"controls.pause": "Anhalten",
 	"controls.restart": "Neustart",
+	"controls.reducedSize": "Verkleinern",
+	"controls.reducedSizeHint":
+		"Empfohlene Anzeigegröße verwenden. Ausschalten stellt die Originalgröße wieder her.",
 	"controls.loop": "Schleife",
 	"controls.autoNext": "Nächste Aktion",
 	"preview.clips_one": "{{count}} Aktion",
@@ -34,6 +37,10 @@ export default {
 	"inspect.position": "Lage",
 	"inspect.scaleValue": "Skalierung",
 	"inspect.rot": "Drehung",
+	"inspect.matrix": "Transformationsmatrix",
+	"inspect.opacity": "Deckkraft",
+	"inspect.color": "Farbe",
+	"inspect.order": "Zeichenreihenfolge",
 	"inspect.spriteInfo": "Einzelbilder",
 	"inspect.spriteLine":
 		"{{count}} Sprite(s) in dieser Aktion, erstes: {{first}}",

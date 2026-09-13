@@ -2,7 +2,12 @@ import type { ReactNode } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useTranslation } from "../../i18n"
-import { classifyClips, clipBoundsFrames, clipDuration } from "../../kernel"
+import {
+	classifyClips,
+	clipBoundsFrames,
+	clipDisplayScale,
+	clipDuration,
+} from "../../kernel"
 import type { Box } from "../../kernel/preview"
 import type { CharacterDocument } from "../../kernel/types"
 import type { ViewMode } from "../ModeToggle"
@@ -10,6 +15,8 @@ import { PlaybackBar } from "../PlaybackBar"
 import { PreviewCell } from "./PreviewCell"
 
 export type PreviewGridProps = {
+	readonly reducedSize: boolean
+	readonly onReducedSize: (value: boolean) => void
 	readonly document: CharacterDocument
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
 	readonly mode: ViewMode
@@ -28,6 +35,8 @@ export type PreviewGridProps = {
  * the inspector uses. No audio path exists here at all.
  */
 export function PreviewGrid({
+	reducedSize,
+	onReducedSize,
 	document,
 	atlasImages,
 	mode,
@@ -91,11 +100,14 @@ export function PreviewGrid({
 							timeMs={duration <= 0 ? 0 : elapsed % duration}
 							atlasImages={atlasImages}
 							bounds={boxes.get(clip.name)}
+							displayScale={clipDisplayScale(clip, reducedSize)}
 						/>
 					)
 				})}
 			</div>
 			<PlaybackBar
+				reducedSize={reducedSize}
+				onReducedSize={onReducedSize}
 				playing={playing}
 				onToggle={() => setPlaying((current) => !current)}
 				onRestart={restartClock}

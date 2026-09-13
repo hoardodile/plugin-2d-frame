@@ -16,6 +16,9 @@ export default {
 	"controls.play": "Reproducir",
 	"controls.pause": "Pausa",
 	"controls.restart": "Reiniciar",
+	"controls.reducedSize": "Tamaño reducido",
+	"controls.reducedSizeHint":
+		"Usar el tamaño recomendado. Desactívalo para volver al tamaño original.",
 	"controls.loop": "Bucle",
 	"controls.autoNext": "Siguiente acción",
 	"preview.clips_one": "{{count}} acción",
@@ -34,6 +37,10 @@ export default {
 	"inspect.position": "Posición",
 	"inspect.scaleValue": "Escala",
 	"inspect.rot": "Giro",
+	"inspect.matrix": "Matriz de transformación",
+	"inspect.opacity": "Opacidad",
+	"inspect.color": "Color RGB",
+	"inspect.order": "Orden de dibujo",
 	"inspect.spriteInfo": "Fotogramas",
 	"inspect.spriteLine":
 		"{{count}} sprite(s) en esta acción, primero: {{first}}",

@@ -17,14 +17,14 @@ no forma parte de este repositorio.
   **raíz de colección** (`catalog.json`, con selector de personajes).
 - **Vista previa (por defecto)**: todas las acciones del personaje se reproducen a la
   vez, una celda por acción, sin configurar nada. Cada celda toma el tamaño de su
-  propio rectángulo de todos los fotogramas y se muestra **siempre a tamaño original
-  (1:1, un píxel de arte = un píxel de dispositivo)**, sin ampliar ni reducir. Las
+  propio rectángulo de todos los fotogramas y se muestra al tamaño original
+  o al tamaño reducido recomendado, según el ajuste. Las
   celdas se envuelven en flex, así que cada acción ocupa su propio espacio; si no
   caben, el panel se desplaza. La vista previa es muda: no carga el mapa de audio y no
   tiene ninguna ruta de reproducción.
 - **Inspeccionar**: una tabla densa de acciones (búsqueda, filtros por categoría,
-  fotogramas / milisegundos / eventos de sonido por fila), un escenario a **tamaño
-  nativo 1:1** que encaja toda la animación en el lienzo en vez de recortarla, una
+  fotogramas / milisegundos / eventos de sonido por fila), un escenario limitado al
+  tamaño elegido que encaja toda la animación en el lienzo en vez de recortarla, una
   **tira de fotogramas** reales para desplazar el cursor; arriba del
   panel derecho, los **interruptores Loop, Siguiente acción y Sound, uno por fila**, y
   después el fotograma actual (capa, sprite, posición, escala, giro, los sonidos de ese
@@ -41,8 +41,9 @@ no forma parte de este repositorio.
 - **Barra inferior de control (igual en ambas vistas)**: reproducir/pausar, reiniciar,
   una lectura en vivo (número de acciones en la vista previa, `fotograma N / M · ms`
   al inspeccionar) y, a la derecha del todo, el cambio de vista; en una colección,
-  además, un selector de personajes con búsqueda. No hay zoom, velocidad ni paso a
-  paso: se reproduce al tamaño y la cadencia exportados.
+  además, un selector de personajes con búsqueda. «Tamaño reducido» está activo por
+  defecto y se recuerda. Sin una proporción recomendada se mantiene el tamaño original;
+  desactivarlo restaura ese tamaño. No cambia los tiempos de animación ni de audio.
 - Audio del personaje: los eventos de sonido que la exportación dispara por fotograma,
   con la ganancia exportada restaurada (las que no son 1.0 muestran una insignia
   `x0.80`), reproducibles cuando resuelven a una muestra, con el estado completo de

@@ -11,10 +11,18 @@ import {
 	clipDuration,
 	clipFrameTotal,
 	clipSpriteNames,
+	createFrameSampler,
 	layersAt,
 	spriteByName,
 } from "./timeline"
-import type { CharacterDocument, Clip, LayerDraw, Vec2 } from "./types"
+import type {
+	Affine,
+	CharacterDocument,
+	Clip,
+	LayerDraw,
+	Vec2,
+	Vec3,
+} from "./types"
 
 /** A rectangle in canvas pixels, y down: `[left, top, width, height]`. */
 export type Box = readonly [
@@ -25,6 +33,9 @@ export type Box = readonly [
 ]
 
 export const EMPTY_BOX: Box = [0, 0, 0, 0]
+
+export const clipDisplayScale = (clip: Clip, reduced = true): number =>
+	reduced ? (clip.displayScale ?? 1) : 1
 
 const unionBoxes = (left: Box, right: Box): Box => {
 	const x = Math.min(left[0], right[0])
@@ -52,12 +63,15 @@ export const layerBox = (layer: LayerDraw, pixelsPerUnit: number): Box => {
 	const radians = (-layer.rotation * Math.PI) / 180
 	const cos = Math.cos(radians)
 	const sin = Math.sin(radians)
-	const points = [quad.left, quad.left + quad.width].flatMap((x) =>
-		[quad.top, quad.top + quad.height].map((y) => ({
-			x: x * cos - y * sin + quad.pivotX,
-			y: x * sin + y * cos + quad.pivotY,
-		})),
-	)
+	const matrix = layer.matrix
+	const points = matrix
+		? affineCorners(layer, matrix, pixelsPerUnit)
+		: [quad.left, quad.left + quad.width].flatMap((x) =>
+				[quad.top, quad.top + quad.height].map((y) => ({
+					x: x * cos - y * sin + quad.pivotX,
+					y: x * sin + y * cos + quad.pivotY,
+				})),
+			)
 	const xs = points.map((point) => point.x)
 	const ys = points.map((point) => point.y)
 	const minX = Math.min(...xs)
@@ -66,6 +80,23 @@ export const layerBox = (layer: LayerDraw, pixelsPerUnit: number): Box => {
 	const maxY = Math.max(...ys)
 	if (![minX, minY, maxX, maxY].every(Number.isFinite)) return EMPTY_BOX
 	return [minX, minY, Math.max(0, maxX - minX), Math.max(0, maxY - minY)]
+}
+
+const affineCorners = (
+	layer: LayerDraw,
+	matrix: Affine,
+	pixelsPerUnit: number,
+) => {
+	const sprite = layer.sprite
+	const width = sprite.rect[2] / sprite.pixelsToUnit
+	const height = sprite.rect[3] / sprite.pixelsToUnit
+	return [-sprite.pivot[0] * width, (1 - sprite.pivot[0]) * width].flatMap(
+		(x) =>
+			[-sprite.pivot[1] * height, (1 - sprite.pivot[1]) * height].map((y) => ({
+				x: (matrix[0] * x + matrix[2] * y + matrix[4]) * pixelsPerUnit,
+				y: -(matrix[1] * x + matrix[3] * y + matrix[5]) * pixelsPerUnit,
+			})),
+	)
 }
 
 const boxOrUndefined = (boxes: readonly Box[]): Box | undefined =>
@@ -99,17 +130,18 @@ export const clipBoundsFrames = (
 	document: CharacterDocument,
 	clip: Clip,
 	pixelsPerUnit: number = DEFAULT_PIXELS_PER_UNIT,
-): Box | undefined =>
-	boxOrUndefined(
+): Box | undefined => {
+	const sample = createFrameSampler(document, clip)
+	return boxOrUndefined(
 		Array.from({ length: Math.max(clipFrameTotal(clip), 1) }, (_value, frame) =>
-			clipBoxAt(
-				document,
-				clip,
-				(clip.sampleRate > 0 ? frame / clip.sampleRate : 0) * 1000,
-				pixelsPerUnit,
+			boxOrUndefined(
+				sample((clip.sampleRate > 0 ? frame / clip.sampleRate : 0) * 1000).map(
+					(layer) => layerBox(layer, pixelsPerUnit),
+				),
 			),
 		).flatMap((box) => (box === undefined ? [] : [box])),
 	)
+}
 
 /** One row of the frame inspector: a drawn layer plus the values behind it. */
 export type FrameLayer = {
@@ -119,6 +151,9 @@ export type FrameLayer = {
 	readonly position: Vec2
 	readonly scale: Vec2
 	readonly order: number
+	readonly matrix?: Affine
+	readonly opacity?: number
+	readonly color?: Vec3
 	/** Source rect size in atlas pixels. */
 	readonly size: Vec2
 }
@@ -136,6 +171,9 @@ export const frameLayers = (
 		position: layer.position,
 		scale: layer.scale,
 		order: layer.order,
+		...(layer.matrix === undefined ? {} : { matrix: layer.matrix }),
+		...(layer.opacity === undefined ? {} : { opacity: layer.opacity }),
+		...(layer.color === undefined ? {} : { color: layer.color }),
 		size: [layer.sprite.rect[2], layer.sprite.rect[3]],
 	}))
 
@@ -268,6 +306,8 @@ export const clipViewPixelsPerUnit = (
 }
 
 export type ClipFitOptions = {
+	/** Whole-clip display reduction, applied after fitting in the reduced coordinate space. */
+	readonly displayScale?: number
 	/** The frame's box, measured at 1:1 by `clipBoundsFrames` (art pixels). */
 	readonly bounds: Box
 	readonly box: Vec2
@@ -305,9 +345,10 @@ export type ClipFit = {
  * — leaving it out draws a 122-pixel frame at a third of a pixel.
  */
 export const fitClipView = (options: ClipFitOptions): ClipFit => {
+	const displayScale = options.displayScale ?? 1
 	const requested = options.zoom * DEFAULT_PIXELS_PER_UNIT
-	const boundsWidth = options.bounds[2]
-	const boundsHeight = options.bounds[3]
+	const boundsWidth = options.bounds[2] * displayScale
+	const boundsHeight = options.bounds[3] * displayScale
 	// Fit on the tighter axis; a degenerate (flat) box constrains nothing.
 	const room =
 		Math.min(
@@ -330,15 +371,17 @@ export const fitClipView = (options: ClipFitOptions): ClipFit => {
 	// the chosen scale. Scaling the bounds is what keeps a zoomed frame centred
 	// on the same point instead of drifting off the canvas.
 	const scaleFactor = pixelsPerUnit / DEFAULT_PIXELS_PER_UNIT
-	const boundsCentreX = (options.bounds[0] + boundsWidth / 2) * scaleFactor
-	const boundsCentreY = (options.bounds[1] + boundsHeight / 2) * scaleFactor
+	const boundsCentreX =
+		(options.bounds[0] * displayScale + boundsWidth / 2) * scaleFactor
+	const boundsCentreY =
+		(options.bounds[1] * displayScale + boundsHeight / 2) * scaleFactor
 	return {
-		pixelsPerUnit,
+		pixelsPerUnit: pixelsPerUnit * displayScale,
 		origin: [
 			options.box[0] / 2 - boundsCentreX,
 			options.box[1] / 2 - boundsCentreY,
 		],
-		effectiveScale: scaleFactor,
+		effectiveScale: scaleFactor * displayScale,
 	}
 }
 

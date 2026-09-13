@@ -9,6 +9,7 @@
  */
 
 import type {
+	Affine,
 	CharacterDocument,
 	Clip,
 	CurveKind,
@@ -112,6 +113,52 @@ const vecAt = (
 const constantsOf = (clip: Clip, layer: string): LayerConstants =>
 	clip.constants[layer] ?? {}
 
+const IDENTITY_MATRIX: Affine = [1, 0, 0, 1, 0, 0]
+
+const matrixAt = (
+	clip: Clip,
+	layer: string,
+	timeMs: number,
+): Affine | undefined => {
+	const track = curveTrack(clip, layer, "matrix")
+	return track === undefined
+		? undefined
+		: [
+				valueAt(track.curves[0] ?? [], timeMs, IDENTITY_MATRIX[0]),
+				valueAt(track.curves[1] ?? [], timeMs, IDENTITY_MATRIX[1]),
+				valueAt(track.curves[2] ?? [], timeMs, IDENTITY_MATRIX[2]),
+				valueAt(track.curves[3] ?? [], timeMs, IDENTITY_MATRIX[3]),
+				valueAt(track.curves[4] ?? [], timeMs, IDENTITY_MATRIX[4]),
+				valueAt(track.curves[5] ?? [], timeMs, IDENTITY_MATRIX[5]),
+			]
+}
+
+const styleAt = (
+	clip: Clip,
+	layer: string,
+	timeMs: number,
+	fallbackOrder: number,
+) => ({
+	matrix: matrixAt(clip, layer, timeMs),
+	opacity: Math.min(
+		1,
+		Math.max(
+			0,
+			valueAt(curveTrack(clip, layer, "opacity")?.curves[0] ?? [], timeMs, 1),
+		),
+	),
+	color: vecAt(
+		curveTrack(clip, layer, "color")?.curves ?? [],
+		timeMs,
+		[1, 1, 1],
+	),
+	order: valueAt(
+		curveTrack(clip, layer, "order")?.curves[0] ?? [],
+		timeMs,
+		fallbackOrder,
+	),
+})
+
 const curveTrack = (
 	clip: Clip,
 	layer: string,
@@ -158,11 +205,10 @@ const transformOf = (
  * scale collapsed to zero is dropped — that is how the game hides a layer it
  * still keys.
  */
-export const layersAt = (
+export const createFrameSampler = (
 	document: CharacterDocument,
 	clip: Clip,
-	timeMs: number,
-): readonly LayerDraw[] => {
+): ((timeMs: number) => readonly LayerDraw[]) => {
 	const spriteIndex = new Map(
 		document.sprites.map((sprite) => [sprite.name, sprite]),
 	)
@@ -173,28 +219,58 @@ export const layersAt = (
 		]),
 	)
 
-	return clip.tracks
-		.filter(isSpriteTrack)
-		.flatMap((track) => {
-			const spriteName = spriteAt(track.keys, timeMs)
-			const sprite =
-				spriteName === null ? undefined : spriteIndex.get(spriteName)
-			if (sprite === undefined) return []
-			const transform = transformOf(clip, track.layer, timeMs)
-			if (transform.scale[0] === 0 || transform.scale[1] === 0) return []
-			return [
-				{
-					layer: track.layer,
-					sprite,
-					position: transform.position,
-					scale: transform.scale,
-					rotation: transform.rotation,
-					order: orderOf.get(track.layer) ?? 0,
-				} satisfies LayerDraw,
-			]
-		})
-		.sort((left, right) => left.order - right.order)
+	const spriteTracks = clip.tracks.filter(isSpriteTrack)
+	return (timeMs) =>
+		spriteTracks
+			.flatMap((track) => {
+				const spriteName = spriteAt(track.keys, timeMs)
+				const sprite =
+					spriteName === null ? undefined : spriteIndex.get(spriteName)
+				if (sprite === undefined) return []
+				const transform = transformOf(clip, track.layer, timeMs)
+				const style =
+					document.schemaVersion >= 2
+						? styleAt(clip, track.layer, timeMs, orderOf.get(track.layer) ?? 0)
+						: undefined
+				const matrix = style?.matrix
+				if (style?.opacity === 0) return []
+				if (
+					matrix
+						? Math.abs(matrix[0] * matrix[3] - matrix[1] * matrix[2]) < 1e-12
+						: transform.scale[0] === 0 || transform.scale[1] === 0
+				)
+					return []
+				const resolved = matrix
+					? {
+							position: [matrix[4], matrix[5]] satisfies Vec2,
+							scale: [
+								Math.hypot(matrix[0], matrix[1]),
+								Math.sign(matrix[0] * matrix[3] - matrix[1] * matrix[2]) *
+									Math.hypot(matrix[2], matrix[3]),
+							] satisfies Vec2,
+							rotation: (Math.atan2(matrix[1], matrix[0]) * 180) / Math.PI,
+						}
+					: transform
+				return [
+					{
+						layer: track.layer,
+						sprite,
+						position: resolved.position,
+						scale: resolved.scale,
+						rotation: resolved.rotation,
+						order: orderOf.get(track.layer) ?? 0,
+						...style,
+					} satisfies LayerDraw,
+				]
+			})
+			.sort((left, right) => left.order - right.order)
 }
+
+export const layersAt = (
+	document: CharacterDocument,
+	clip: Clip,
+	timeMs: number,
+): readonly LayerDraw[] => createFrameSampler(document, clip)(timeMs)
 
 /** Sprite names a clip can show, in first-appearance order (for the contact sheet). */
 export const clipSpriteNames = (clip: Clip): readonly string[] => {

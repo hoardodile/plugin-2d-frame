@@ -4,6 +4,7 @@ import { quadFor } from "../kernel/atlas"
 import type { Box } from "../kernel/preview"
 import {
 	clipBoundsFrames,
+	clipDisplayScale,
 	clipViewPixelsPerUnit,
 	fitClipView,
 	fitViewport,
@@ -59,7 +60,7 @@ const document = documentOf([
 ])
 
 /** A clip whose only motion is a position curve on its one layer. */
-const movedDocument = (): CharacterDocument =>
+const movedDocument = (distance = 16): CharacterDocument =>
 	documentOf([
 		{
 			...clipAt("moved", [
@@ -81,7 +82,7 @@ const movedDocument = (): CharacterDocument =>
 					curves: [
 						[
 							[0, 0],
-							[33.33, 16],
+							[33.33, distance],
 						],
 						[[0, 0]],
 						[[0, 0]],
@@ -137,6 +138,29 @@ describe("clip bounds", () => {
 		expect(clipBoundsFrames(moved, moved.clips[0]!)).toEqual([
 			-16, -32, 1632, 32,
 		])
+	})
+
+	it("fits long travel even when the bounds exceed the atlas page", () => {
+		const moved = movedDocument(50)
+		const clip = moved.clips[0]!
+		const bounds = clipBoundsFrames(moved, clip)!
+		expect(bounds).toEqual([-16, -32, 5032, 32])
+		const fit = fitViewport({
+			bounds,
+			box: [150, 120],
+			maxPixelsPerUnit: 400,
+			paddingRatio: 1,
+		})
+		const scale = fit.pixelsPerUnit / 100
+		for (const frame of [0, 1000 / 30]) {
+			for (const layer of layersAt(moved, clip, frame)) {
+				const box = layerBox(layer, 100)
+				expect(box[0] * scale + fit.origin[0]).toBeGreaterThanOrEqual(-1e-6)
+				expect((box[0] + box[2]) * scale + fit.origin[0]).toBeLessThanOrEqual(
+					150 + 1e-6,
+				)
+			}
+		}
 	})
 
 	it("contains every frame it measures", () => {
@@ -278,6 +302,51 @@ describe("viewport fitting", () => {
 })
 
 describe("thumbnail scale", () => {
+	it("preserves authored size for old documents and when reduction is disabled", () => {
+		const clip = document.clips[0]!
+		expect(clipDisplayScale(clip)).toBe(1)
+		expect(clipDisplayScale({ ...clip, displayScale: 0.8 })).toBe(0.8)
+		expect(clipDisplayScale({ ...clip, displayScale: 0.8 }, false)).toBe(1)
+	})
+
+	it("reduces and centres the whole frame without changing its authored bounds", () => {
+		const bounds: Box = [-40, -100, 125, 200]
+		const view = fitClipView({
+			bounds,
+			displayScale: 0.8,
+			box: [100, 160],
+			maxPixelsPerUnit: 100,
+			paddingRatio: 1,
+			ratio: 1,
+			mode: "exact",
+			zoom: 1,
+		})
+		expect(view.pixelsPerUnit).toBe(80)
+		expect(drawnRect(bounds, view.origin, view.pixelsPerUnit)).toEqual([
+			0, 0, 100, 160,
+		])
+		expect(bounds).toEqual([-40, -100, 125, 200])
+	})
+
+	it("fits using the reduced size before quantizing the viewport scale", () => {
+		const options = {
+			bounds: [-40, -100, 125, 200] as const,
+			displayScale: 0.65,
+			box: [500, 500] as const,
+			maxPixelsPerUnit: 100,
+			paddingRatio: 1,
+			ratio: 1,
+			mode: "fit" as const,
+			zoom: 1,
+		}
+		expect(fitClipView(options).pixelsPerUnit).toBe(65)
+		const small = fitClipView({ ...options, displayScale: 0.8, box: [50, 80] })
+		expect(small.pixelsPerUnit).toBe(40)
+		expect(
+			drawnRect(options.bounds, small.origin, small.pixelsPerUnit),
+		).toEqual([0, 0, 50, 80])
+	})
+
 	it("never exceeds 1:1 and snaps to whole device pixels", () => {
 		// A 32×32 draw in a 40×48 cell is drawn at exactly 1:1.
 		expect(clipViewPixelsPerUnit([0, 0, 32, 32], [40, 48], 1)).toBe(100)

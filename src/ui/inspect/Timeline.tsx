@@ -22,6 +22,7 @@ import {
 const STRIP_LIMIT = 32
 
 export type TimelineProps = {
+	readonly displayScale: number
 	readonly document: CharacterDocument
 	readonly clip: Clip
 	readonly timeMs: number
@@ -45,6 +46,7 @@ export function Timeline(props: TimelineProps) {
 	return (
 		<div className="shrink-0 border-border border-t px-3 py-2">
 			<FrameStrip
+				displayScale={props.displayScale}
 				document={props.document}
 				clip={clip}
 				atlasImages={props.atlasImages}
@@ -58,6 +60,7 @@ export function Timeline(props: TimelineProps) {
 }
 
 type FrameStripProps = {
+	readonly displayScale: number
 	readonly document: CharacterDocument
 	readonly clip: Clip
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
@@ -87,6 +90,7 @@ const FrameStrip = memo(function FrameStrip(props: FrameStripProps) {
 					onClick={() => props.onTime(entry.timeMs)}
 				>
 					<FrameTile
+						displayScale={props.displayScale}
 						document={props.document}
 						clip={props.clip}
 						atlasImages={props.atlasImages}
@@ -100,6 +104,7 @@ const FrameStrip = memo(function FrameStrip(props: FrameStripProps) {
 })
 
 type FrameTileProps = {
+	readonly displayScale: number
 	readonly document: CharacterDocument
 	readonly clip: Clip
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
@@ -118,13 +123,14 @@ type FrameTileProps = {
 const FrameTile = memo(function FrameTile(props: FrameTileProps) {
 	const { ref, box } = useCanvasBox()
 	const ratio = useDeviceRatio()
-	const { document, clip, timeMs, atlasImages, bounds } = props
+	const { document, clip, timeMs, atlasImages, bounds, displayScale } = props
 
 	useEffect(() => {
 		const canvas = ref.current
 		if (canvas === null || box.width === 0 || box.height === 0) return
 		if (bounds === undefined || bounds[2] <= 0 || bounds[3] <= 0) return
 		paintClipFitted(canvas, {
+			displayScale,
 			document,
 			clip,
 			timeMs,
@@ -135,7 +141,17 @@ const FrameTile = memo(function FrameTile(props: FrameTileProps) {
 			maxPixelsPerUnit: DEFAULT_PIXELS_PER_UNIT,
 			paddingRatio: TILE_PADDING_RATIO,
 		})
-	}, [document, clip, timeMs, atlasImages, bounds, ratio, box, ref])
+	}, [
+		document,
+		clip,
+		timeMs,
+		atlasImages,
+		bounds,
+		ratio,
+		box,
+		ref,
+		displayScale,
+	])
 
 	return <canvas ref={ref} className="block h-12 w-10" />
 })

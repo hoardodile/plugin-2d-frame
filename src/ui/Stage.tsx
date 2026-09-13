@@ -17,17 +17,17 @@ export type StageProps = {
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
 	/** The clip's box across all frames, measured at 1:1. */
 	readonly bounds: Box | undefined
+	readonly displayScale: number
 }
 
 /**
  * Canvas painter for the inspector: one sampled frame, framed in the viewport.
  *
- * The frame is drawn at one art pixel per device pixel whenever the clip's
- * whole-animation box fits the stage — which is most clips, and is what keeps
- * the view technically exact — and is scaled *down* (never up) when the box is
+ * The frame uses the selected display size whenever its whole-animation box
+ * fits the stage. It is scaled further down when the reduced box is
  * bigger than the stage, so a dash or a jump stays visible instead of landing
  * outside the canvas. Frames are never scaled up, and the scale snaps to whole
- * device pixels per art pixel so a blit is never resampled.
+ * device pixels in the reduced coordinate space.
  */
 export function Stage(props: StageProps) {
 	const { ref, box } = useCanvasBox()
@@ -40,6 +40,7 @@ export function Stage(props: StageProps) {
 		if (bounds === undefined) return
 		const dest: Vec2 = [box.width, box.height]
 		paintClipFitted(canvas, {
+			displayScale: props.displayScale,
 			document,
 			clip,
 			timeMs,

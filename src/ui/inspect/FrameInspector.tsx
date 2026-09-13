@@ -77,6 +77,7 @@ export function FrameInspector(props: FrameInspectorProps) {
 	const [voicesOpen, setVoicesOpen] = useState(false)
 	const frame = frameIndex(timeMs, clip.sampleRate, clipFrameTotal(clip))
 	const drawn = frameLayers(document, clip, timeMs)
+	const extended = document.schemaVersion >= 2
 	const due = eventsAtFrame(
 		document.sounds.filter((sound) => sound.name === clip.name),
 		frame,
@@ -144,6 +145,10 @@ export function FrameInspector(props: FrameInspectorProps) {
 									{t("inspect.scaleValue")}
 								</TableHead>
 								<TableHead className="text-right">{t("inspect.rot")}</TableHead>
+								{extended && <TableHead>{t("inspect.matrix")}</TableHead>}
+								{extended && <TableHead>{t("inspect.opacity")}</TableHead>}
+								{extended && <TableHead>{t("inspect.color")}</TableHead>}
+								{extended && <TableHead>{t("inspect.order")}</TableHead>}
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -164,6 +169,26 @@ export function FrameInspector(props: FrameInspectorProps) {
 									<TableCell className="text-right text-xs tabular-nums">
 										{formatRounded(layer.rotation)}
 									</TableCell>
+									{extended && (
+										<TableCell className="text-xs tabular-nums">
+											{layer.matrix?.map(formatNumber).join(", ") ?? "—"}
+										</TableCell>
+									)}
+									{extended && (
+										<TableCell className="text-xs tabular-nums">
+											{formatNumber(layer.opacity ?? 1)}
+										</TableCell>
+									)}
+									{extended && (
+										<TableCell className="text-xs tabular-nums">
+											{(layer.color ?? [1, 1, 1]).map(formatNumber).join(", ")}
+										</TableCell>
+									)}
+									{extended && (
+										<TableCell className="text-xs tabular-nums">
+											{formatNumber(layer.order)}
+										</TableCell>
+									)}
 								</TableRow>
 							))}
 						</TableBody>

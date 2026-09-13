@@ -43,6 +43,7 @@ export const usePlayback = ({
 	const [timeMs, setTimeMs] = useState(0)
 	const [playing, setPlaying] = useState(true)
 	const timeRef = useRef(0)
+	const initialEventsPending = useRef(true)
 
 	const duration = clipDuration(clip)
 
@@ -57,6 +58,7 @@ export const usePlayback = ({
 	// A new action restarts the playhead at frame 0.
 	useEffect(() => {
 		commit(0)
+		initialEventsPending.current = true
 	}, [clip, commit])
 
 	useEffect(() => {
@@ -72,12 +74,13 @@ export const usePlayback = ({
 				for (const due of dueEvents(
 					document.sounds.filter((sound) => sound.name === clip.name),
 					clip,
-					from,
+					initialEventsPending.current ? -0.001 : from,
 					next,
 				)) {
 					emit(due)
 				}
 			}
+			initialEventsPending.current = false
 			commit(next)
 			handle = requestAnimationFrame(tick)
 		}
@@ -87,12 +90,14 @@ export const usePlayback = ({
 
 	const restart = useCallback(() => {
 		commit(0)
+		initialEventsPending.current = true
 		setPlaying(true)
 	}, [commit])
 
 	const seek = useCallback(
 		(next: number) => {
 			setPlaying(false)
+			initialEventsPending.current = false
 			commit(next)
 		},
 		[commit],

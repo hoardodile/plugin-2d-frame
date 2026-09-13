@@ -9,6 +9,8 @@ import type { ViewMode } from "./ModeToggle"
 import { ModeToggle } from "./ModeToggle"
 
 export type PlaybackBarProps = {
+	readonly reducedSize: boolean
+	readonly onReducedSize: (value: boolean) => void
 	readonly playing: boolean
 	readonly onToggle: () => void
 	readonly onRestart: () => void
@@ -64,6 +66,15 @@ export function PlaybackBar(props: PlaybackBarProps) {
 				</span>
 			</div>
 			<div className="ml-auto flex items-center gap-2">
+				<Button
+					size="sm"
+					variant={props.reducedSize ? "secondary" : "ghost"}
+					aria-pressed={props.reducedSize}
+					title={t("controls.reducedSizeHint")}
+					onClick={() => props.onReducedSize(!props.reducedSize)}
+				>
+					{t("controls.reducedSize")}
+				</Button>
 				{props.picker}
 				<ModeToggle value={props.mode} onChange={props.onMode} />
 			</div>

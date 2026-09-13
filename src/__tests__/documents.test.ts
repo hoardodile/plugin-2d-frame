@@ -69,7 +69,7 @@ describe.skipIf(sampleDocuments().length === 0)("exported documents", () => {
 	 * sized to is the union of what every frame draws, so it has to cover the
 	 * motion — but a box that spans an atlas page would shrink the character to
 	 * nothing. Measure every clip of a spread of real characters and require
-	 * both: a box big enough to show the frame, small enough to be a frame.
+	 * the fitted artwork to remain visible and contained in the viewport.
 	 */
 	it("measure every clip at a size the viewer can actually show", () => {
 		const tile = [150, 120] as const
@@ -101,13 +101,9 @@ describe.skipIf(sampleDocuments().length === 0)("exported documents", () => {
 				).toBeGreaterThan(20)
 				expect(drawnWidth).toBeLessThanOrEqual(tile[0] + 1)
 				expect(drawnHeight).toBeLessThanOrEqual(tile[1] + 1)
-				// The union is the whole animation, so it is normally close to a
-				// single pose; only a clip that genuinely travels gets a big box,
-				// and even a cross-screen dash stays inside a page.
-				expect(
-					Math.max(bounds[2], bounds[3]),
-					`${path} ${clip.name}: box ${bounds}`,
-				).toBeLessThan(2048)
+				// Travel can span more than an atlas page. Atlas dimensions bound
+				// source rectangles, not a clip's world-space motion.
+				expect(bounds.every(Number.isFinite)).toBe(true)
 			}
 		}
 	})
@@ -157,5 +153,31 @@ describe("character voices", () => {
 		expect(() =>
 			decode({ ...document, voices: [{ name: "a", slot: 0 }] }),
 		).toThrow()
+	})
+
+	it("preserves optional display reductions and rejects invalid values", () => {
+		const clip = {
+			name: "sample",
+			sampleRate: 30,
+			frameCount: 1,
+			durationMs: 1000 / 30,
+			tracks: [],
+			constants: {},
+		}
+		expect(
+			decode({
+				...document,
+				schemaVersion: 2,
+				clips: [{ ...clip, displayScale: 0.8 }],
+			}).clips[0]?.displayScale,
+		).toBe(0.8)
+		expect(
+			decode({ ...document, clips: [clip] }).clips[0]?.displayScale,
+		).toBeUndefined()
+		for (const value of [0, -1, 1.01, Infinity, NaN, "0.8"]) {
+			expect(() =>
+				decode({ ...document, clips: [{ ...clip, displayScale: value }] }),
+			).toThrow()
+		}
 	})
 })

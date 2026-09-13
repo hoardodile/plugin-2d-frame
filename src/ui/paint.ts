@@ -14,13 +14,14 @@ import {
 	atlasImageFor,
 	atlasSource,
 	canvasRotation,
+	createFrameSampler,
 	fitClipView,
 	integerSourceRect,
-	layersAt,
 	quadFor,
 } from "../kernel"
 import type { Box } from "../kernel/preview"
 import type { CharacterDocument, Clip, Vec2 } from "../kernel/types"
+import { tintedSprite } from "./tint"
 
 export type BoxState = { readonly width: number; readonly height: number }
 
@@ -98,6 +99,20 @@ export type ClipFrameProps = {
 	readonly origin: Vec2
 }
 
+const frameSamplers = new WeakMap<
+	CharacterDocument,
+	WeakMap<Clip, ReturnType<typeof createFrameSampler>>
+>()
+const samplerFor = (document: CharacterDocument, clip: Clip) => {
+	const clips =
+		frameSamplers.get(document) ??
+		new WeakMap<Clip, ReturnType<typeof createFrameSampler>>()
+	frameSamplers.set(document, clips)
+	const sampler = clips.get(clip) ?? createFrameSampler(document, clip)
+	clips.set(clip, sampler)
+	return sampler
+}
+
 /**
  * Blit one sampled frame into a canvas, in draw order.
  *
@@ -120,10 +135,43 @@ export const paintClipFrame = (
 	if (context === null) return
 	const snap = (value: number): number =>
 		Math.round(value * props.ratio) / props.ratio
-	for (const layer of layersAt(props.document, props.clip, props.timeMs)) {
+	for (const layer of samplerFor(props.document, props.clip)(props.timeMs)) {
 		const image = atlasImageFor(layer.sprite, props.atlasImages)
 		if (image === undefined) continue
 		const source = integerSourceRect(atlasSource(layer.sprite, props.document))
+		if (layer.matrix) {
+			const [a, b, c, d, tx, ty] = layer.matrix
+			const unit = props.pixelsPerUnit / layer.sprite.pixelsToUnit
+			const tinted = layer.color?.some((value) => value !== 1)
+				? tintedSprite(image, source, layer.color)
+				: undefined
+			context.save()
+			context.globalAlpha = layer.opacity ?? 1
+			context.translate(
+				snap(props.origin[0] + tx * props.pixelsPerUnit),
+				snap(props.origin[1] - ty * props.pixelsPerUnit),
+			)
+			context.transform(a, -b, -c, d, 0, 0)
+			const deviceScale =
+				Math.min(Math.hypot(a, b), Math.hypot(c, d)) * unit * props.ratio
+			context.imageSmoothingEnabled =
+				deviceScale < 1 - 1e-3 &&
+				Math.abs(1 / deviceScale - Math.round(1 / deviceScale)) > 1e-3
+			context.imageSmoothingQuality = "high"
+			context.drawImage(
+				tinted ?? image,
+				tinted ? 0 : source[0],
+				tinted ? 0 : source[1],
+				source[2],
+				source[3],
+				-layer.sprite.pivot[0] * source[2] * unit,
+				-(1 - layer.sprite.pivot[1]) * source[3] * unit,
+				source[2] * unit,
+				source[3] * unit,
+			)
+			context.restore()
+			continue
+		}
 		const quad = quadFor(
 			layer.sprite,
 			layer.position,
@@ -147,15 +195,19 @@ export const paintClipFrame = (
 		context.imageSmoothingEnabled = deviceScale < 1 - 1e-3 && !exactScale
 		context.imageSmoothingQuality = "high"
 		context.save()
+		context.globalAlpha = layer.opacity ?? 1
 		context.translate(
 			snap(props.origin[0] + quad.pivotX),
 			snap(props.origin[1] + quad.pivotY),
 		)
 		context.rotate(canvasRotation(layer.rotation))
+		const tinted = layer.color?.some((value) => value !== 1)
+			? tintedSprite(image, source, layer.color)
+			: undefined
 		context.drawImage(
-			image,
-			source[0],
-			source[1],
+			tinted ?? image,
+			tinted ? 0 : source[0],
+			tinted ? 0 : source[1],
 			source[2],
 			source[3],
 			left,
@@ -168,6 +220,7 @@ export const paintClipFrame = (
 }
 
 export type FitPaintProps = Omit<ClipFrameProps, "origin" | "pixelsPerUnit"> & {
+	readonly displayScale?: number
 	/** The frame's box, measured with `clipBoundsFrames` at 1:1. */
 	readonly bounds: Box
 	/** The canvas content box the frame has to fit into. */
@@ -193,6 +246,7 @@ export const paintClipFitted = (
 	props: FitPaintProps,
 ): void => {
 	const view = fitClipView({
+		displayScale: props.displayScale,
 		bounds: props.bounds,
 		box: props.dest,
 		maxPixelsPerUnit: props.maxPixelsPerUnit,

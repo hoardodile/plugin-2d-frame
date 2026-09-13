@@ -16,13 +16,13 @@ dieses Repositorys.
   **Sammelordner** (`catalog.json`, mit Charakterauswahl).
 - **Vorschau (Standard)**: Alle Aktionen des Charakters laufen gleichzeitig, eine
   Kachel pro Aktion, ohne jede Einstellung. Jede Kachel bekommt die Größe ihres
-  eigenen Gesamtbild-Rahmens und wird **immer in Originalgröße gezeigt (1:1, ein
-  Art-Pixel = ein Gerätepixel)** — ohne Vergrößerung oder Verkleinerung. Die Kacheln
+  eigenen Gesamtbild-Rahmens und wird in Originalgröße oder der empfohlenen
+  reduzierten Größe angezeigt. Die Kacheln
   umbrechen per Flex, sodass unterschiedlich große Aktionen ihren eigenen Platz
   bekommen; reicht der Platz nicht, scrollt das Panel. Die Vorschau ist stumm — sie
   lädt die Audio-Zuordnung nicht und hat gar keinen Wiedergabeweg.
 - **Prüfen**: eine dichte Aktionstabelle (Suche, Kategoriefilter, je Zeile Bilder /
-  Millisekunden / Sound-Events), eine Bühne in **nativer 1:1-Größe**, die eine ganze
+  Millisekunden / Sound-Events), eine Bühne bis zur gewählten Anzeigegröße, die eine ganze
   Animation in die Fläche einpasst statt sie zu beschneiden, ein
   **Bildstreifen** aus echten Einzelbildern zum Scrubben; oben im rechten Panel die
   **Schalter Loop, Nächste Aktion und Sound, je eine Zeile**, danach das aktuelle Bild
@@ -39,8 +39,9 @@ dieses Repositorys.
 - **Untere Steuerleiste (in beiden Ansichten gleich)**: Play/Pause, Neustart, eine
   Live-Anzeige (Aktionsanzahl in der Vorschau, `Bild N / M · ms` beim Prüfen) und ganz
   rechts der Ansichtswechsel; bei einer Sammlung zusätzlich eine durchsuchbare
-  Charakterauswahl. Zoom, Tempo und Einzelbildschritt gibt es nicht — es wird in
-  Exportgröße und Export-Bildrate abgespielt.
+  Charakterauswahl. „Verkleinern“ ist standardmäßig aktiv und wird gespeichert.
+  Ohne empfohlene Skalierung bleibt die Originalgröße erhalten; Ausschalten stellt
+  sie wieder her. Animations- und Audiotiming bleiben unverändert.
 - Charakter-Audio: die Sound-Events, die der Export pro Frame auslöst, mit
   wiederhergestelltem Pegel (Werte ungleich 1.0 zeigen ein `x0.80`-Badge), abspielbar
   sobald sie auf ein Sample zeigen, inklusive vollständigem Auflösungsstatus

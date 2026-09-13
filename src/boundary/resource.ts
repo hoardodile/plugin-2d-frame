@@ -180,6 +180,7 @@ export const loadImage = (
 			try: () =>
 				new Promise<HTMLImageElement>((resolve, reject) => {
 					const image = new Image()
+					image.crossOrigin = "anonymous"
 					image.onload = () => resolve(image)
 					image.onerror = () => reject(new Error("image decode failed"))
 					image.src = url

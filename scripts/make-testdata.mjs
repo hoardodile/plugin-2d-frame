@@ -199,11 +199,38 @@ const audioMap = [
 	{ event: "event:/sfx/demo/voice_b", file: null, match: "unresolved" },
 ]
 
+// Opt-in fixture for affine/style regression and manual preview checks.
+const exportDocument = process.argv.includes("--v2")
+	? {
+			...document,
+			schemaVersion: 2,
+			clips: document.clips.map((clip) => ({
+				...clip,
+				displayScale: 0.8,
+				tracks: [
+					...clip.tracks,
+					{
+						layer: "layer0",
+						kind: "matrix",
+						curves: [1, 0, 0.25, 1, 0, 0].map((value) => [[0, value]]),
+					},
+					{ layer: "layer0", kind: "opacity", curves: [[[0, 0.75]]] },
+					{
+						layer: "layer0",
+						kind: "color",
+						curves: [1, 0.75, 1].map((value) => [[0, value]]),
+					},
+					{ layer: "layer0", kind: "order", curves: [[[0, 0]]] },
+				],
+			})),
+		}
+	: document
+
 mkdirSync(join(root, "atlas"), { recursive: true })
 writeFileSync(join(root, "atlas", "test-atlas.png"), png)
 writeFileSync(
 	join(root, "character.json"),
-	JSON.stringify(document, null, "\t"),
+	JSON.stringify(exportDocument, null, "\t"),
 )
 writeFileSync(
 	join(root, "audio-map.json"),

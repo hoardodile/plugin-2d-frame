@@ -15,12 +15,12 @@ separate, private producer, not part of this repository.
   **collection root** (`catalog.json`, with a character picker).
 - **Preview (default)**: every action of the character plays at once, one tile per
   action, no setup required. Each tile is sized to its own full-frame bounds and
-  shown at **1:1 — one art pixel per device pixel, never scaled up or down**; tiles
+  shown at its exported size, or its recommended reduced size when available; tiles
   wrap in a flex row, so differently sized actions each get their own space and the
   panel scrolls when they do not fit. Preview is silent — it never loads the audio
   map and has no playback path at all.
 - **Inspect**: a dense action table (search, category filters, frames / milliseconds
-  / sound-event count per row), a stage at **native 1:1** that frames a whole
+  / sound-event count per row), a stage capped at the selected display size that frames a whole
   animation into the canvas instead of cropping it, a **frame strip** of real frame
   thumbnails to scrub, and the **Loop, Next action and Sound switches, one per row**,
   at the top of the right panel, followed by the current frame: the drawn layers
@@ -37,8 +37,9 @@ separate, private producer, not part of this repository.
 - **Bottom control bar (identical in both views)**: play/pause, restart, a live
   readout (the action count in preview, `frame N / M · ms` in inspect), and the view
   switch at the far right; a collection resource adds a searchable character picker.
-  There is no zoom, speed or frame-step control — frames play at the exported pixel
-  size and frame rate.
+  **Reduced size** is on by default and remembered across resources. It applies each
+  action's recommended reduction; turn it off to restore the exported size. Exports
+  without a recommendation keep their original size. Playback timing stays unchanged.
 - Character audio: the sound events the export fires per frame, with the exported
   gain restored (gains above 1.0 show an `x0.80` badge), playable when they resolve
   to a sample, plus the full event→sample status (unresolved ones are shown rather

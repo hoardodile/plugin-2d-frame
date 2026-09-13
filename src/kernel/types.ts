@@ -8,6 +8,15 @@
 
 export type Vec2 = readonly [x: number, y: number]
 export type Vec3 = readonly [x: number, y: number, z: number]
+/** World-space 2D affine transform: x'=a*x+c*y+tx, y'=b*x+d*y+ty. */
+export type Affine = readonly [
+	a: number,
+	b: number,
+	c: number,
+	d: number,
+	tx: number,
+	ty: number,
+]
 export type Rect = readonly [
 	x: number,
 	y: number,
@@ -34,7 +43,16 @@ export type NumericKey = readonly [timeMs: number, value: number]
  * Curve kinds that place a layer: `position`/`scale`/`euler` come from the
  * Transform binding, `rotation` is the quaternion curve (kept, not drawn).
  */
-export const CURVE_KINDS = ["position", "scale", "euler", "rotation"] as const
+export const CURVE_KINDS = [
+	"position",
+	"scale",
+	"euler",
+	"rotation",
+	"matrix",
+	"opacity",
+	"color",
+	"order",
+] as const
 export type CurveKind = (typeof CURVE_KINDS)[number]
 
 export type SpriteTrack = {
@@ -82,6 +100,8 @@ export type ClipGroup = (typeof CLIP_GROUPS)[number]
 
 export type Clip = {
 	readonly name: string
+	/** Optional recommended whole-clip display reduction; authored tracks stay intact. */
+	readonly displayScale?: number
 	/** Action bucket; absent on documents exported before the label existed. */
 	readonly group?: ClipGroup
 	readonly sampleRate: number
@@ -195,6 +215,9 @@ export type LayerDraw = {
 	readonly scale: Vec2
 	readonly rotation: number
 	readonly order: number
+	readonly matrix?: Affine
+	readonly opacity?: number
+	readonly color?: Vec3
 }
 
 /** A quad placed relative to its own pivot, in stage pixels. */

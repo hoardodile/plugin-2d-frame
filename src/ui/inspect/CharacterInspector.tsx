@@ -11,6 +11,7 @@ import { useTranslation } from "../../i18n"
 import {
 	classifyClips,
 	clipBoundsFrames,
+	clipDisplayScale,
 	clipDuration,
 	nextClipName,
 } from "../../kernel"
@@ -27,6 +28,8 @@ import { FrameInspector } from "./FrameInspector"
 import { Timeline } from "./Timeline"
 
 export type CharacterInspectorProps = {
+	readonly reducedSize: boolean
+	readonly onReducedSize: (value: boolean) => void
 	readonly document: CharacterDocument
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
 	readonly audioMap: AudioMap
@@ -59,6 +62,8 @@ const NO_CLIP: Clip = {
  * leaving the space empty.
  */
 export function CharacterInspector({
+	reducedSize,
+	onReducedSize,
 	document,
 	atlasImages,
 	audioMap,
@@ -137,6 +142,11 @@ export function CharacterInspector({
 		emit,
 		loop: looping,
 	})
+	const displayScale = clipDisplayScale(clip ?? NO_CLIP, reducedSize)
+
+	useEffect(() => {
+		void runtime.runPromise(stopAll())
+	}, [runtime, clip, sound, playback.playing])
 
 	const bounds: Box | undefined = useMemo(
 		() => (clip === undefined ? undefined : clipBoundsFrames(document, clip)),
@@ -181,6 +191,7 @@ export function CharacterInspector({
 							timeMs={playback.timeMs}
 							atlasImages={atlasImages}
 							bounds={bounds}
+							displayScale={displayScale}
 						/>
 					</div>
 				</div>
@@ -189,10 +200,16 @@ export function CharacterInspector({
 					clip={clip}
 					timeMs={playback.timeMs}
 					bounds={bounds}
+					displayScale={displayScale}
 					atlasImages={atlasImages}
-					onTime={playback.seek}
+					onTime={(time) => {
+						void runtime.runPromise(stopAll())
+						playback.seek(time)
+					}}
 				/>
 				<ControlBar
+					reducedSize={reducedSize}
+					onReducedSize={onReducedSize}
 					clip={clip}
 					timeMs={playback.timeMs}
 					playing={playback.playing}

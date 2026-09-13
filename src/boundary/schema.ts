@@ -26,7 +26,7 @@ const SpriteRecord = Schema.Struct({
 })
 
 const SpriteKey = Schema.Tuple([Schema.Number, Schema.NullOr(Schema.String)])
-const NumericKey = Schema.Tuple([Schema.Number, Schema.Number])
+const NumericKey = Schema.Tuple([Schema.Finite, Schema.Finite])
 
 const SpriteTrack = Schema.Struct({
 	layer: Schema.String,
@@ -38,13 +38,32 @@ const SpriteTrack = Schema.Struct({
  * Transform curves carry a known kind; other generic bindings are hashed into
  * `attribute<id>` names, so anything else is accepted and simply not drawn.
  */
-const CurveKind = Schema.String
+const CurveKind = Schema.String.check(
+	Schema.makeFilter(
+		(kind) => kind !== "sprite" || "Sprite tracks require keys",
+	),
+)
 
 const CurveTrack = Schema.Struct({
 	layer: Schema.String,
 	kind: CurveKind,
 	curves: Schema.Array(Schema.Array(NumericKey)),
-})
+}).check(
+	Schema.makeFilter((track) => {
+		const dimensions: Readonly<Record<string, number>> = {
+			matrix: 6,
+			opacity: 1,
+			color: 3,
+			order: 1,
+		}
+		const size = dimensions[track.kind]
+		return (
+			size === undefined ||
+			track.curves.length === size ||
+			`Invalid ${track.kind} component count`
+		)
+	}),
+)
 
 /**
  * Action buckets the picker groups clips into. Declared as a literal union so a
@@ -64,6 +83,13 @@ const ClipGroup = Schema.Literals([
 
 const Clip = Schema.Struct({
 	name: Schema.String,
+	displayScale: Schema.optional(
+		Schema.Number.check(
+			Schema.makeFilter(
+				(value) => Number.isFinite(value) && value > 0 && value <= 1,
+			),
+		),
+	),
 	group: Schema.optional(ClipGroup),
 	sampleRate: Schema.Number,
 	frameCount: Schema.Number,
@@ -115,7 +141,7 @@ const AtlasInfo = Schema.Struct({
 })
 
 export const CharacterDocumentSchema = Schema.Struct({
-	schemaVersion: Schema.Number,
+	schemaVersion: Schema.Literals([1, 2]),
 	id: Schema.String,
 	name: Schema.NullOr(Schema.String),
 	sourceGroup: Schema.String,

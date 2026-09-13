@@ -32,7 +32,7 @@ import { characterDirectory } from "./characterPaths"
 import { CharacterInspector } from "./inspect/CharacterInspector"
 import type { ViewMode } from "./ModeToggle"
 import { PreviewGrid } from "./preview/PreviewGrid"
-import { useViewModePref } from "./useViewerPrefs"
+import { useReducedSizePref, useViewModePref } from "./useViewerPrefs"
 
 type LoadedCharacter = {
 	readonly document: CharacterDocument
@@ -61,6 +61,7 @@ export function CharacterView() {
 	const api = usePluginAPI()
 	const { t } = useTranslation()
 	const [mode, setMode] = useViewModePref()
+	const [reducedSize, setReducedSize] = useReducedSizePref()
 
 	const runtime: ViewerRuntime = useMemo(
 		() =>
@@ -205,6 +206,8 @@ export function CharacterView() {
 				<NoActions document={state.document} />
 			) : mode === "preview" ? (
 				<PreviewGrid
+					reducedSize={reducedSize}
+					onReducedSize={setReducedSize}
 					document={state.document}
 					atlasImages={state.atlasImages}
 					mode={mode}
@@ -213,6 +216,8 @@ export function CharacterView() {
 				/>
 			) : (
 				<CharacterInspector
+					reducedSize={reducedSize}
+					onReducedSize={setReducedSize}
 					document={state.document}
 					atlasImages={state.atlasImages}
 					audioMap={state.audioMap}

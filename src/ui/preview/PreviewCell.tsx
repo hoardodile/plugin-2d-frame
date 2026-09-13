@@ -15,6 +15,7 @@ export type PreviewCellProps = {
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
 	/** The clip's box across all frames, measured by the grid at 1:1. */
 	readonly bounds: Box | undefined
+	readonly displayScale: number
 }
 
 /**
@@ -31,10 +32,9 @@ const artSide = (value: number | undefined): number =>
  * One tile of the animation preview: the clip's current frame at its natural
  * size, with the clip's own name and length.
  *
- * The canvas is the clip's whole-animation box in art pixels and the current
- * frame is blitted at exactly one art pixel per canvas pixel, centred by moving
- * the origin — no fit, no scaling, nothing to round. Every frame is therefore
- * inside the tile by construction: the box is the union of all of them, so a
+ * The canvas follows the clip's whole-animation box at the selected display
+ * scale. The same fixed multiplier sizes the tile, the origin and every layer.
+ * Every frame is inside the tile by construction: the box unions all of them, so a
  * moving action gets a tile the artwork travels inside rather than a tile that
  * crops it. A small character gets a small tile and a large one a large tile,
  * which is what lets the flex layout wrap. The caller owns the clock, so every
@@ -43,9 +43,13 @@ const artSide = (value: number | undefined): number =>
 export function PreviewCell(props: PreviewCellProps) {
 	const { ref, box } = useCanvasBox()
 	const ratio = useDeviceRatio()
-	const { document, clip, timeMs, atlasImages, bounds } = props
-	const width = artSide(bounds?.[2])
-	const height = artSide(bounds?.[3])
+	const { document, clip, timeMs, atlasImages, bounds, displayScale } = props
+	const width = artSide(
+		bounds === undefined ? undefined : bounds[2] * displayScale,
+	)
+	const height = artSide(
+		bounds === undefined ? undefined : bounds[3] * displayScale,
+	)
 
 	useEffect(() => {
 		const canvas = ref.current
@@ -56,8 +60,8 @@ export function PreviewCell(props: PreviewCellProps) {
 		// `origin + pivot + quad`, which is exactly `origin + bounds`:
 		// `canvas = origin + bounds` by construction.
 		const origin: [number, number] = [
-			(width - bounds[2]) / 2 - bounds[0],
-			(height - bounds[3]) / 2 - bounds[1],
+			(width - bounds[2] * displayScale) / 2 - bounds[0] * displayScale,
+			(height - bounds[3] * displayScale) / 2 - bounds[1] * displayScale,
 		]
 		paintClipFrame(canvas, {
 			document,
@@ -65,7 +69,7 @@ export function PreviewCell(props: PreviewCellProps) {
 			timeMs,
 			atlasImages,
 			ratio,
-			pixelsPerUnit: DEFAULT_PIXELS_PER_UNIT,
+			pixelsPerUnit: DEFAULT_PIXELS_PER_UNIT * displayScale,
 			origin,
 		})
 	}, [
@@ -79,6 +83,7 @@ export function PreviewCell(props: PreviewCellProps) {
 		ref,
 		width,
 		height,
+		displayScale,
 	])
 
 	return (

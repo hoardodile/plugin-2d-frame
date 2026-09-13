@@ -39,7 +39,7 @@ export const dueEvents = (
 	const intervals: readonly (readonly [number, number])[] = wrapped
 		? [
 				[fromMs, duration],
-				[0, toMs],
+				[-EPSILON * 2, toMs],
 			]
 		: [[fromMs, toMs]]
 	const inInterval = (timeMs: number): boolean =>

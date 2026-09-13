@@ -7,6 +7,8 @@ import type { ViewMode } from "../ModeToggle"
 import { PlaybackBar } from "../PlaybackBar"
 
 export type ControlBarProps = {
+	readonly reducedSize: boolean
+	readonly onReducedSize: (value: boolean) => void
 	readonly clip: Clip
 	readonly timeMs: number
 	readonly playing: boolean
@@ -29,6 +31,8 @@ export function ControlBar(props: ControlBarProps) {
 
 	return (
 		<PlaybackBar
+			reducedSize={props.reducedSize}
+			onReducedSize={props.onReducedSize}
 			playing={props.playing}
 			onToggle={props.onToggle}
 			onRestart={props.onRestart}
