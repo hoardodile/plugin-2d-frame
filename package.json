@@ -75,7 +75,7 @@
 		"@types/react-dom": "^19.2.4",
 		"jsdom": "^30.0.1",
 		"lefthook": "^2.1.10",
-		"lint-staged": "^17.3.0",
+		"lint-staged": "^17.5.1",
 		"release-it": "^21.0.2",
 		"shadcn": "^4.21.0",
 		"tailwindcss": "^4.3.3",
