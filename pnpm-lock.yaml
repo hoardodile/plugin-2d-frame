@@ -27,8 +27,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(zod@4.5.4)
       '@hoardodile/ui':
-        specifier: ^0.2.0
-        version: 0.2.0(@types/react@19.2.18)(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.0.13(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(react@19.2.8)(shadcn@4.21.0(typescript@7.0.2))(tailwindcss@4.3.3)(tw-animate-css@1.4.0)(typescript@7.0.2)(zod@4.5.4)
+        specifier: ^0.2.2
+        version: 0.2.2(@types/react@19.2.18)(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.0.13(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(react@19.2.8)(shadcn@4.21.0(typescript@7.0.2))(tailwindcss@4.3.3)(tw-animate-css@1.4.0)(typescript@7.0.2)(zod@4.5.4)
       effect:
         specifier: 4.0.0-rc.113
         version: 4.0.0-rc.113
@@ -554,6 +554,10 @@ packages:
     resolution: {integrity: sha512-pYrCO0dCsSUkLUEdJAP30OyWvWkIIbNsc+RcuvpEJn0a7Ef2yWTm2ldA6hqayReFXFTziuwB4BUo2U/MfYN6pw==}
     engines: {node: '>=24'}
 
+  '@hoardodile/i18n@0.2.2':
+    resolution: {integrity: sha512-4G1I7y+qRGIvFeiLEfMQ8ybNIJKBbh1LdNfE71Tf/6XYkxZgo6fY/Q3lXE/3Ruu4kbBvhJjDJka9KzbYO/QTpQ==}
+    engines: {node: '>=24'}
+
   '@hoardodile/sdk-react@0.2.0':
     resolution: {integrity: sha512-Lb+WVUTNL5J2bKyio9VwJ3jzAEJhgEF5OSXBUPN8qmpD3RxZ9uBmFYsiJPvNn6QSQVOA1UvP/jp1fEjcko5Y1g==}
     engines: {node: '>=24'}
@@ -571,12 +575,37 @@ packages:
     peerDependencies:
       zod: ^4.4.3
 
+  '@hoardodile/sdk-types@0.2.2':
+    resolution: {integrity: sha512-W4EBes8+RFHwvTwr3nDgiYqPkPP68b845Q3YAv1NEOdG2SQ/O0ey4vYQ5w4hmci0y3CgbeOh+QxEGB8vHX+TYQ==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      zod: ^4.4.3
+
   '@hoardodile/sdk-web@0.2.0':
     resolution: {integrity: sha512-OR0xXrQH6R1uRiMgwoMrQ8iaR0c06/tam1ohNwGIQ4qQDtOTGG+rVdQjZsnXTWDCNjfKaiDyIfN5LW2KCUr4MQ==}
     engines: {node: '>=24'}
 
   '@hoardodile/ui@0.2.0':
     resolution: {integrity: sha512-jSfkDGxVvW4XdMfMUfaJOAAQ4PZ9OIXJhTVcydf2byqJiAySf9wr+UERt8DYKbl3Sohowv1iICvGt34/vww3kw==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      i18next: ^26.4.0
+      react: ^19.2.8
+      react-dom: ^19.2.8
+      react-i18next: ^17.0.12
+      shadcn: ^4.16.1
+      tailwindcss: ^4.3.3
+      tw-animate-css: ^1.4.0
+    peerDependenciesMeta:
+      shadcn:
+        optional: true
+      tailwindcss:
+        optional: true
+      tw-animate-css:
+        optional: true
+
+  '@hoardodile/ui@0.2.2':
+    resolution: {integrity: sha512-nTaCBd4zDEWulo0Zfr+vUQf4Zmo4Nu6ehioYxOl7rjuq//ciPmuVFT1tVW/Z1N4Kmka/FKVtzfF1NipEmxx8cw==}
     engines: {node: '>=24'}
     peerDependencies:
       i18next: ^26.4.0
@@ -4179,6 +4208,16 @@ snapshots:
       - react-native
       - typescript
 
+  '@hoardodile/i18n@0.2.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)':
+    dependencies:
+      i18next: 26.4.2(typescript@7.0.2)
+      react-i18next: 17.0.13(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - react-native
+      - typescript
+
   '@hoardodile/sdk-react@0.2.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shadcn@4.21.0(typescript@7.0.2))(tailwindcss@4.3.3)(tw-animate-css@1.4.0)(typescript@7.0.2)(zod@4.5.4)':
     dependencies:
       '@hoardodile/i18n': 0.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
@@ -4210,6 +4249,10 @@ snapshots:
     dependencies:
       zod: 4.5.4
 
+  '@hoardodile/sdk-types@0.2.2(zod@4.5.4)':
+    dependencies:
+      zod: 4.5.4
+
   '@hoardodile/sdk-web@0.2.0(zod@4.5.4)':
     dependencies:
       '@hoardodile/sdk-types': 0.2.0(zod@4.5.4)
@@ -4224,6 +4267,38 @@ snapshots:
       '@dnd-kit/utilities': 3.2.2(react@19.2.8)
       '@hoardodile/i18n': 0.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
       '@hoardodile/sdk-types': 0.2.0(zod@4.5.4)
+      '@solar-icons/react': 2.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      class-variance-authority: 0.7.1
+      clsx: 2.1.1
+      i18next: 26.4.2(typescript@7.0.2)
+      pretty-bytes: 7.1.3
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      react-hook-form: 7.87.0(react@19.2.8)
+      react-i18next: 17.0.13(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
+      react-image-crop: 11.1.2(react@19.2.8)
+      react-use: 17.6.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      tailwind-merge: 3.6.0
+    optionalDependencies:
+      shadcn: 4.21.0(typescript@7.0.2)
+      tailwindcss: 4.3.3
+      tw-animate-css: 1.4.0
+    transitivePeerDependencies:
+      - '@date-fns/tz'
+      - '@types/react'
+      - date-fns
+      - react-native
+      - typescript
+      - zod
+
+  '@hoardodile/ui@0.2.2(@types/react@19.2.18)(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.0.13(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(react@19.2.8)(shadcn@4.21.0(typescript@7.0.2))(tailwindcss@4.3.3)(tw-animate-css@1.4.0)(typescript@7.0.2)(zod@4.5.4)':
+    dependencies:
+      '@base-ui/react': 1.8.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@dnd-kit/core': 6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@dnd-kit/sortable': 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+      '@dnd-kit/utilities': 3.2.2(react@19.2.8)
+      '@hoardodile/i18n': 0.2.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
+      '@hoardodile/sdk-types': 0.2.2(zod@4.5.4)
       '@solar-icons/react': 2.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
