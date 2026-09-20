@@ -2,7 +2,7 @@
 	"id": "ff80cf94-d7c5-4a85-894c-26032864ae9e",
 	"name": "2D Frame",
 	"description": "Frame-animation viewer for exported 2D character sprite folders",
-	"version": "0.1.3",
+	"version": "0.2.0",
 	"minAppVersion": "0.2.0",
 	"permissions": {
 		"sourceMeta": true,

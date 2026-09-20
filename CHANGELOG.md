@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.0](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.3...v0.2.0) (2026-09-20)
+
+### Features
+
+* **player:** add action variants and frame cover capture ([27d344e](https://github.com/hoardodile/plugin-2d-frame/commit/27d344ea1d4967a6726c89ef835eb726bbf30ea8))
+
+### Bug Fixes
+
+* **player:** align split sprite edges to device pixels ([70e3985](https://github.com/hoardodile/plugin-2d-frame/commit/70e398576b35a5945a2fe9af6b464aca67c6d26c))
+
 ## [0.1.3](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.2...v0.1.3) (2026-09-13)
 
 ### Bug Fixes
