@@ -55,8 +55,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(sharp@0.35.4(@types/node@26.5.0))(vitest@4.1.11(@types/node@26.5.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.5.0)(jiti@2.7.0)(yaml@2.9.0)))(zod@4.5.4)
       '@hoardodile/workbench':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.2
+        version: 0.2.2
       '@release-it/conventional-changelog':
         specifier: ^12.0.0
         version: 12.0.0(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)(release-it@21.0.2(@types/node@26.5.0))
@@ -594,8 +594,8 @@ packages:
       tw-animate-css:
         optional: true
 
-  '@hoardodile/workbench@0.2.0':
-    resolution: {integrity: sha512-rdacXMiRX7NJUOCN/5RE1MdyZ0zr+FlrwA8uel2navmhSixZYo7UC6+oo6aiAZBSdSXHJSmkZOcOiiCS0u9ISA==}
+  '@hoardodile/workbench@0.2.2':
+    resolution: {integrity: sha512-SOGrSFgaOVMZ/uOU7soJ6eA3fEpHkBOwvL3YGMfjUIGf3AZiorXAf6n35bHH5OcZYo+hv9BqpZK9y2asD2IY2Q==}
     engines: {node: '>=24'}
 
   '@hono/node-server@2.1.1':
@@ -4248,7 +4248,7 @@ snapshots:
       - typescript
       - zod
 
-  '@hoardodile/workbench@0.2.0': {}
+  '@hoardodile/workbench@0.2.2': {}
 
   '@hono/node-server@2.1.1(hono@4.13.7)':
     dependencies:
