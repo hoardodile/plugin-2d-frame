@@ -52,8 +52,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(@babel/core@8.0.1)(@babel/runtime@7.29.7)(@types/node@26.5.0)(jiti@2.7.0)(rolldown@1.2.7)(vitest@4.1.11(@types/node@26.5.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.5.0)(jiti@2.7.0)(yaml@2.9.0)))(yaml@2.9.0)(zod@4.5.4)
       '@hoardodile/host':
-        specifier: ^0.2.0
-        version: 0.2.0(sharp@0.35.4(@types/node@26.5.0))(vitest@4.1.11(@types/node@26.5.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.5.0)(jiti@2.7.0)(yaml@2.9.0)))(zod@4.5.4)
+        specifier: ^0.2.2
+        version: 0.2.2(sharp@0.35.4(@types/node@26.5.0))(vitest@4.1.11(@types/node@26.5.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.5.0)(jiti@2.7.0)(yaml@2.9.0)))(zod@4.5.4)
       '@hoardodile/workbench':
         specifier: ^0.2.0
         version: 0.2.0
@@ -550,6 +550,18 @@ packages:
       vitest:
         optional: true
 
+  '@hoardodile/host@0.2.2':
+    resolution: {integrity: sha512-h+O/rP7KHu3F9XqPrhg0A9w/Uhz3eafkEWHGGyuVMY5qRvzDe7rqPFmW3tcZbjMrIMkPhUSZS3agptUxhd5k2A==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      sharp: ^0.35.4
+      vitest: ^4.1.11
+    peerDependenciesMeta:
+      sharp:
+        optional: true
+      vitest:
+        optional: true
+
   '@hoardodile/i18n@0.2.0':
     resolution: {integrity: sha512-pYrCO0dCsSUkLUEdJAP30OyWvWkIIbNsc+RcuvpEJn0a7Ef2yWTm2ldA6hqayReFXFTziuwB4BUo2U/MfYN6pw==}
     engines: {node: '>=24'}
@@ -567,6 +579,12 @@ packages:
 
   '@hoardodile/sdk-types@0.2.0':
     resolution: {integrity: sha512-iPmxv/+pZaeyYbsaX2uUNPaiQaqZ4mpem24p4BFrjaCx9yGlTZG/Lnms8+WLoT+ldynd4VjN1R4x1RJ/cACJAw==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      zod: ^4.4.3
+
+  '@hoardodile/sdk-types@0.2.2':
+    resolution: {integrity: sha512-W4EBes8+RFHwvTwr3nDgiYqPkPP68b845Q3YAv1NEOdG2SQ/O0ey4vYQ5w4hmci0y3CgbeOh+QxEGB8vHX+TYQ==}
     engines: {node: '>=24'}
     peerDependencies:
       zod: ^4.4.3
@@ -4169,6 +4187,23 @@ snapshots:
       - supports-color
       - zod
 
+  '@hoardodile/host@0.2.2(sharp@0.35.4(@types/node@26.5.0))(vitest@4.1.11(@types/node@26.5.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.5.0)(jiti@2.7.0)(yaml@2.9.0)))(zod@4.5.4)':
+    dependencies:
+      '@hoardodile/sdk-types': 0.2.2(zod@4.5.4)
+      execa: 10.0.1
+      file-type: 22.0.2
+      yauzl: 3.4.0
+      yazl: 3.3.1
+    optionalDependencies:
+      '@hoardodile/7z-bin': 1.1.3
+      '@hoardodile/ffmpeg-bin': 1.0.0
+      '@hoardodile/ffprobe-bin': 1.0.0
+      sharp: 0.35.4(@types/node@26.5.0)
+      vitest: 4.1.11(@types/node@26.5.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@26.5.0)(jiti@2.7.0)(yaml@2.9.0))
+    transitivePeerDependencies:
+      - supports-color
+      - zod
+
   '@hoardodile/i18n@0.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)':
     dependencies:
       i18next: 26.4.2(typescript@7.0.2)
@@ -4207,6 +4242,10 @@ snapshots:
       - zod
 
   '@hoardodile/sdk-types@0.2.0(zod@4.5.4)':
+    dependencies:
+      zod: 4.5.4
+
+  '@hoardodile/sdk-types@0.2.2(zod@4.5.4)':
     dependencies:
       zod: 4.5.4
 
