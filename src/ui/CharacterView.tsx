@@ -5,22 +5,22 @@ import {
 	EmptyTitle,
 } from "@hoardodile/ui/components/empty"
 import { Skeleton } from "@hoardodile/ui/components/skeleton"
-import { Effect } from "effect"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react"
 
 import { stopAll } from "../boundary/audio"
-import type {
-	AudioMap,
-	CatalogDocument,
-	CharacterDocument,
-} from "../boundary/documents"
+import type { CatalogDocument, CharacterDocument } from "../boundary/documents"
 import { classifyResource } from "../boundary/documents"
 import type { ViewerRuntime } from "../boundary/layer"
 import {
-	audioMapPath,
 	catalogPath,
 	characterPath,
-	loadAudioMapOptional,
 	loadDocument,
 	makeRuntime,
 } from "../boundary/layer"
@@ -29,15 +29,19 @@ import { usePluginAPI } from "../hooks"
 import { useTranslation } from "../i18n"
 import { CharacterPicker } from "./CharacterPicker"
 import { characterDirectory } from "./characterPaths"
-import { CharacterInspector } from "./inspect/CharacterInspector"
 import type { ViewMode } from "./ModeToggle"
 import { PreviewGrid } from "./preview/PreviewGrid"
 import { useReducedSizePref, useViewModePref } from "./useViewerPrefs"
 
+const CharacterInspector = lazy(() =>
+	import("./inspect/CharacterInspector").then((module) => ({
+		default: module.CharacterInspector,
+	})),
+)
+
 type LoadedCharacter = {
 	readonly document: CharacterDocument
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
-	readonly audioMap: AudioMap
 }
 
 type LoadState =
@@ -132,36 +136,24 @@ export function CharacterView() {
 		[kind, catalog, selectedId],
 	)
 
-	// The audio map is a large flat list of resolved samples, and the preview
-	// never plays one, so it is only read once the inspector is open.
-	const withAudio = mode === "inspect"
+	// Changing views keeps the decoded document and atlas pages alive.
 	useEffect(() => {
 		if (kind === undefined) return undefined
 		if (kind.kind === "collection" && selectedId === null) return undefined
 		let cancelled = false
 		setState({ status: "loading" })
-		runtime
-			.runPromise(
-				Effect.gen(function* () {
-					const loaded = yield* loadDocument(characterPath(directory))
-					const audioMap = withAudio
-						? yield* loadAudioMapOptional(audioMapPath(directory))
-						: []
-					return { ...loaded, audioMap } satisfies LoadedCharacter
-				}),
-			)
-			.then(
-				(loaded) => {
-					if (!cancelled) setState({ status: "ready", ...loaded })
-				},
-				(error: unknown) => {
-					if (!cancelled) setState({ status: "error", message: String(error) })
-				},
-			)
+		runtime.runPromise(loadDocument(characterPath(directory))).then(
+			(loaded) => {
+				if (!cancelled) setState({ status: "ready", ...loaded })
+			},
+			(error: unknown) => {
+				if (!cancelled) setState({ status: "error", message: String(error) })
+			},
+		)
 		return () => {
 			cancelled = true
 		}
-	}, [directory, kind, runtime, selectedId, withAudio])
+	}, [directory, kind, runtime, selectedId])
 
 	const switchMode = useCallback(
 		(next: ViewMode) => {
@@ -215,18 +207,20 @@ export function CharacterView() {
 					picker={picker}
 				/>
 			) : (
-				<CharacterInspector
-					reducedSize={reducedSize}
-					onReducedSize={setReducedSize}
-					document={state.document}
-					atlasImages={state.atlasImages}
-					audioMap={state.audioMap}
-					directory={directory}
-					runtime={runtime}
-					mode={mode}
-					onMode={switchMode}
-					picker={picker}
-				/>
+				<Suspense fallback={<Skeleton className="min-h-0 flex-1" />}>
+					<CharacterInspector
+						key={directory}
+						reducedSize={reducedSize}
+						onReducedSize={setReducedSize}
+						document={state.document}
+						atlasImages={state.atlasImages}
+						directory={directory}
+						runtime={runtime}
+						mode={mode}
+						onMode={switchMode}
+						picker={picker}
+					/>
+				</Suspense>
 			)}
 		</div>
 	)

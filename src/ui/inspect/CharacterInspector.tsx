@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { playUrl, stopAll } from "../../boundary/audio"
-import type { AudioMap } from "../../boundary/documents"
 import type { ViewerRuntime } from "../../boundary/layer"
 import { fileUrl } from "../../boundary/resource"
 import { useTranslation } from "../../i18n"
@@ -21,6 +20,7 @@ import { CoverButton } from "../CoverButton"
 import { captureFrame } from "../cover"
 import type { ViewMode } from "../ModeToggle"
 import { Stage } from "../Stage"
+import { useAudioMap } from "../useAudioMap"
 import { usePlayback } from "../usePlayback"
 import { useViewerPrefs } from "../useViewerPrefs"
 import { ActionList } from "./ActionList"
@@ -33,7 +33,6 @@ export type CharacterInspectorProps = {
 	readonly onReducedSize: (value: boolean) => void
 	readonly document: CharacterDocument
 	readonly atlasImages: ReadonlyMap<string, HTMLImageElement>
-	readonly audioMap: AudioMap
 	readonly directory: string
 	readonly runtime: ViewerRuntime
 	readonly mode: ViewMode
@@ -67,7 +66,6 @@ export function CharacterInspector({
 	onReducedSize,
 	document,
 	atlasImages,
-	audioMap,
 	directory,
 	runtime,
 	mode,
@@ -75,6 +73,7 @@ export function CharacterInspector({
 	picker,
 }: CharacterInspectorProps) {
 	const { t } = useTranslation()
+	const audioMap = useAudioMap(runtime, directory)
 	const [selection, setSelection] = useState({ actionId: "", variantIndex: 0 })
 	const [cycleVariants, setCycleVariants] = useState(true)
 	const [soundIndex, setSoundIndex] = useState(0)
