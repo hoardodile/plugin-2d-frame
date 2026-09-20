@@ -9,15 +9,16 @@ import type { ViewerRuntime } from "../../boundary/layer"
 import { fileUrl } from "../../boundary/resource"
 import { useTranslation } from "../../i18n"
 import {
-	classifyClips,
 	clipBoundsFrames,
 	clipDisplayScale,
 	clipDuration,
-	nextClipName,
+	modelActions,
 } from "../../kernel"
 import type { DueEvent } from "../../kernel/events"
 import type { Box } from "../../kernel/preview"
 import type { CharacterDocument, Clip } from "../../kernel/types"
+import { CoverButton } from "../CoverButton"
+import { captureFrame } from "../cover"
 import type { ViewMode } from "../ModeToggle"
 import { Stage } from "../Stage"
 import { usePlayback } from "../usePlayback"
@@ -74,7 +75,9 @@ export function CharacterInspector({
 	picker,
 }: CharacterInspectorProps) {
 	const { t } = useTranslation()
-	const [clipName, setClipName] = useState("")
+	const [selection, setSelection] = useState({ actionId: "", variantIndex: 0 })
+	const [cycleVariants, setCycleVariants] = useState(true)
+	const [soundIndex, setSoundIndex] = useState(0)
 	// The three viewer switches are plugin preferences, so they survive a
 	// reload and apply to every character in a collection.
 	const { loop, setLoop, autoNext, setAutoNext, sound, setSound } =
@@ -88,21 +91,28 @@ export function CharacterInspector({
 	const showActions = !belowSidebar
 	const showPanel = !belowSidebar && !belowPanel
 
-	const ordered = useMemo(
-		() => classifyClips(document.clips).map((entry) => entry.clip),
-		[document],
+	const actions = useMemo(() => modelActions(document), [document])
+	const action =
+		actions.find((a) => a.id === selection.actionId) ??
+		actions.find((a) => a.name === "C_idle") ??
+		actions[0]
+	const variantIndex = action?.variants[selection.variantIndex]
+		? selection.variantIndex
+		: 0
+	const variant = action?.variants[variantIndex]
+	const clip: Clip | undefined = document.clips.find(
+		(item) => item.name === variant?.clip,
 	)
-	const clip: Clip | undefined =
-		document.clips.find((item) => item.name === clipName) ?? ordered.at(0)
+	const soundName =
+		variant?.sounds[soundIndex]?.name ?? variant?.sounds[0]?.name ?? clip?.name
+	const selectAction = (actionId: string) => {
+		setSelection({ actionId, variantIndex: 0 })
+		setSoundIndex(0)
+	}
 
 	useEffect(() => {
-		setClipName((current) =>
-			current.length > 0 && document.clips.some((item) => item.name === current)
-				? current
-				: (document.clips.find((item) => item.name === "C_idle")?.name ??
-					document.clips.at(0)?.name ??
-					""),
-		)
+		setSelection({ actionId: "", variantIndex: 0 })
+		setSoundIndex(0)
 	}, [document])
 
 	// Leaving the technical view must not leave a frame's sample playing.
@@ -135,18 +145,20 @@ export function CharacterInspector({
 	// it ever reaches the end of the action, so auto-next overrides the loop
 	// preference instead of overwriting it — turning auto-next back off restores
 	// whatever the user had stored.
-	const looping = loop && !autoNext
+	const cycling = cycleVariants && (action?.variants.length ?? 0) > 1
+	const looping = loop && !autoNext && !cycling
 	const playback = usePlayback({
 		document,
 		clip: clip ?? NO_CLIP,
 		emit,
 		loop: looping,
+		soundName,
 	})
 	const displayScale = clipDisplayScale(clip ?? NO_CLIP, reducedSize)
 
 	useEffect(() => {
 		void runtime.runPromise(stopAll())
-	}, [runtime, clip, sound, playback.playing])
+	}, [runtime, clip, soundName, sound, playback.playing])
 
 	const bounds: Box | undefined = useMemo(
 		() => (clip === undefined ? undefined : clipBoundsFrames(document, clip)),
@@ -165,12 +177,40 @@ export function CharacterInspector({
 	 */
 	useEffect(() => {
 		const duration = clipDuration(clip ?? NO_CLIP)
-		if (!autoNext || duration <= 0) return
+		if (
+			(!autoNext && !cycling) ||
+			!playback.playing ||
+			duration <= 0 ||
+			action === undefined
+		)
+			return
 		if (playback.timeMs < duration) return
-		const next = nextClipName(ordered, clip?.name ?? "")
-		if (next !== undefined && next !== clip?.name) setClipName(next)
+		const nextVariant = cycling ? variantIndex + 1 : action.variants.length
+		if (nextVariant < action.variants.length) {
+			setSelection({ actionId: action.id, variantIndex: nextVariant })
+		} else if (autoNext) {
+			const next =
+				actions[
+					(actions.findIndex((a) => a.id === action.id) + 1) % actions.length
+				]
+			setSelection({ actionId: next?.id ?? action.id, variantIndex: 0 })
+		} else if (loop) {
+			setSelection({ actionId: action.id, variantIndex: 0 })
+		} else return
+		setSoundIndex(0)
 		playback.restart()
-	}, [autoNext, clip, ordered, playback.restart, playback.timeMs])
+	}, [
+		autoNext,
+		cycling,
+		clip,
+		action,
+		actions,
+		variantIndex,
+		loop,
+		playback.restart,
+		playback.timeMs,
+		playback.playing,
+	])
 
 	if (clip === undefined) {
 		return (
@@ -183,6 +223,101 @@ export function CharacterInspector({
 	return (
 		<div className="flex size-full min-h-0 bg-background text-foreground">
 			<main className="flex min-w-0 flex-1 flex-col">
+				{action !== undefined && variant !== undefined ? (
+					<div className="flex flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-xs">
+						<CoverButton
+							key={document.id}
+							capture={() => {
+								playback.seek(playback.timeMs)
+								return captureFrame({
+									document,
+									clip,
+									timeMs: playback.timeMs,
+									atlasImages,
+									displayScale,
+								})
+							}}
+						/>
+						<select
+							className="max-w-64 rounded border border-border bg-background px-2 py-1"
+							aria-label={t("inspect.action")}
+							value={action.id}
+							onChange={(event) => selectAction(event.target.value)}
+						>
+							{actions.map((a) => (
+								<option key={a.id} value={a.id}>
+									{a.name}
+								</option>
+							))}
+						</select>
+						{action.variants.length > 1 ? (
+							<>
+								<select
+									className="rounded border border-border bg-background px-2 py-1"
+									aria-label={t("variants.choose")}
+									value={cycleVariants ? "cycle" : variantIndex}
+									onChange={(event) => {
+										const cycling = event.target.value === "cycle"
+										setCycleVariants(cycling)
+										if (!cycling)
+											setSelection({
+												actionId: action.id,
+												variantIndex: Number(event.target.value),
+											})
+										setSoundIndex(0)
+									}}
+								>
+									<option value="cycle">{t("variants.cycle")}</option>
+									{action.variants.map((v, index) => (
+										<option key={v.clip} value={index}>
+											{t("variants.number", { index: index + 1 })}
+										</option>
+									))}
+								</select>
+								<span
+									className="tabular-nums"
+									data-testid="inspector-variant-counter"
+								>
+									{variantIndex + 1}/{action.variants.length}
+								</span>
+							</>
+						) : null}
+						{variant.sounds.length > 1 ? (
+							<label className="flex items-center gap-2">
+								{t("variants.audio")}
+								<select
+									className="rounded border border-border bg-background px-2 py-1"
+									aria-label={t("variants.audio")}
+									value={soundIndex}
+									onChange={(event) =>
+										setSoundIndex(Number(event.target.value))
+									}
+								>
+									{variant.sounds.map((v, index) => (
+										<option key={v.name} value={index}>
+											{t("variants.number", { index: index + 1 })}
+										</option>
+									))}
+								</select>
+							</label>
+						) : null}
+						{document.actions ? (
+							<details className="ml-auto max-w-80">
+								<summary className="cursor-pointer text-muted-foreground">
+									{t("variants.origins")}
+								</summary>
+								{variant.sources.map((s) => (
+									<div
+										key={`${s.characterId}:${s.clipName}`}
+										className="break-all pt-1"
+									>
+										{s.characterId} · {s.clipName}
+									</div>
+								))}
+							</details>
+						) : null}
+					</div>
+				) : null}
 				<div className="relative min-h-0 flex-1">
 					<div className="absolute inset-0">
 						<Stage
@@ -225,8 +360,8 @@ export function CharacterInspector({
 				<aside className="flex w-sidebar min-w-0 flex-col border-border border-r">
 					<ActionList
 						document={document}
-						value={clip.name}
-						onChange={setClipName}
+						value={action?.id ?? ""}
+						onChange={selectAction}
 					/>
 				</aside>
 			) : null}
@@ -236,11 +371,12 @@ export function CharacterInspector({
 					<FrameInspector
 						document={document}
 						clip={clip}
+						soundName={soundName}
 						timeMs={playback.timeMs}
 						audioMap={audioMap}
 						audioEnabled={sound}
 						onAudioEnabled={setSound}
-						loop={looping}
+						loop={loop && !autoNext}
 						onLoop={setLoop}
 						autoNext={autoNext}
 						onAutoNext={setAutoNext}

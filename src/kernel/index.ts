@@ -6,6 +6,7 @@
  * the renderer (`src/ui/**`) paints whatever `layersAt` returns.
  */
 
+export * from "./actions"
 export * from "./atlas"
 export * from "./events"
 export * from "./preview"

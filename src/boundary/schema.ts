@@ -140,6 +140,30 @@ const AtlasInfo = Schema.Struct({
 	height: Schema.Number,
 })
 
+const ClipOrigin = Schema.Struct({
+	characterId: Schema.String,
+	clipName: Schema.String,
+})
+
+const ModelAction = Schema.Struct({
+	id: Schema.String,
+	name: Schema.String,
+	group: ClipGroup,
+	added: Schema.Boolean,
+	variants: Schema.Array(
+		Schema.Struct({
+			clip: Schema.String,
+			sources: Schema.Array(ClipOrigin),
+			sounds: Schema.Array(
+				Schema.Struct({
+					name: Schema.String,
+					sources: Schema.Array(ClipOrigin),
+				}),
+			),
+		}),
+	),
+})
+
 export const CharacterDocumentSchema = Schema.Struct({
 	schemaVersion: Schema.Literals([1, 2]),
 	id: Schema.String,
@@ -159,6 +183,12 @@ export const CharacterDocumentSchema = Schema.Struct({
 	atlases: Schema.Array(AtlasInfo),
 	sprites: Schema.Array(SpriteRecord),
 	clips: Schema.Array(Clip),
+	actions: Schema.optional(Schema.Array(ModelAction)),
+	modelSources: Schema.optional(
+		Schema.Array(
+			Schema.Struct({ id: Schema.String, name: Schema.NullOr(Schema.String) }),
+		),
+	),
 	sounds: Schema.Array(SoundEvent),
 	voices: Schema.optional(Schema.Array(VoiceEvent)),
 	layers: Schema.Array(LayerInfo),
@@ -170,10 +200,49 @@ export const CharacterDocumentSchema = Schema.Struct({
 	stats: Schema.Struct({
 		sprites: Schema.Number,
 		clips: Schema.Number,
+		actions: Schema.optional(Schema.Number),
 		soundEvents: Schema.Number,
 		maxClipMs: Schema.Number,
 	}),
-})
+}).check(
+	Schema.makeFilter((document) => {
+		if (document.actions === undefined) return true
+		const clips = new Set(document.clips.map((c) => c.name))
+		const sounds = new Set(document.sounds.map((s) => s.name))
+		const sources = new Set(document.modelSources?.map((s) => s.id))
+		const assigned = document.actions.flatMap((a) =>
+			a.variants.map((v) => v.clip),
+		)
+		return (
+			(sources.size > 0 &&
+				sources.size === document.modelSources?.length &&
+				new Set(document.actions.map((a) => a.id)).size ===
+					document.actions.length &&
+				assigned.length === clips.size &&
+				new Set(assigned).size === clips.size &&
+				document.stats.actions === document.actions.length &&
+				document.actions.every(
+					(a) =>
+						a.variants.length > 0 &&
+						a.variants.every(
+							(v) =>
+								clips.has(v.clip) &&
+								v.sounds.length > 0 &&
+								v.sounds.every((s) => sounds.has(s.name)) &&
+								[v.sources, ...v.sounds.map((s) => s.sources)].every(
+									(origins) =>
+										origins.length > 0 &&
+										origins.every(
+											(s) =>
+												sources.has(s.characterId) && s.clipName.length > 0,
+										),
+								),
+						),
+				)) ||
+			"Invalid model action references or provenance"
+		)
+	}),
+)
 
 export const CatalogDocumentSchema = Schema.Struct({
 	schemaVersion: Schema.Number,

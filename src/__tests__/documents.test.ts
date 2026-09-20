@@ -24,7 +24,11 @@ import type { CharacterDocument } from "../kernel/types"
 const decode = Schema.decodeUnknownSync(CharacterDocumentSchema)
 
 const dataRoot = resolve(process.env.FRAME_DATA_ROOT ?? "unpacked")
-const charactersRoot = join(dataRoot, "characters")
+const charactersRoot = existsSync(join(dataRoot, "models", "catalog.json"))
+	? join(dataRoot, "models")
+	: existsSync(join(dataRoot, "characters"))
+		? join(dataRoot, "characters")
+		: dataRoot
 const SPREAD = 12
 
 /** First few, every n-th, and the last few exported characters. */

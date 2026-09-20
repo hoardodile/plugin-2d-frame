@@ -2,17 +2,11 @@ import type { ReactNode } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useTranslation } from "../../i18n"
-import {
-	classifyClips,
-	clipBoundsFrames,
-	clipDisplayScale,
-	clipDuration,
-} from "../../kernel"
-import type { Box } from "../../kernel/preview"
+import { actionHasDifferences, modelActions } from "../../kernel"
 import type { CharacterDocument } from "../../kernel/types"
 import type { ViewMode } from "../ModeToggle"
 import { PlaybackBar } from "../PlaybackBar"
-import { PreviewCell } from "./PreviewCell"
+import { ActionPreview } from "./ActionPreview"
 
 export type PreviewGridProps = {
 	readonly reducedSize: boolean
@@ -46,6 +40,8 @@ export function PreviewGrid({
 	const { t } = useTranslation()
 	const [elapsed, setElapsed] = useState(0)
 	const [playing, setPlaying] = useState(true)
+	const [differencesOnly, setDifferencesOnly] = useState(false)
+	const [resetSignal, setResetSignal] = useState(0)
 	const containerRef = useRef<HTMLDivElement | null>(null)
 
 	// One clock for the whole grid. Elapsed time lives in a ref while playing and
@@ -69,41 +65,52 @@ export function PreviewGrid({
 	const restartClock = () => {
 		elapsedRef.current = 0
 		setElapsed(0)
+		setResetSignal((current) => current + 1)
 	}
 
-	const clips = useMemo(
-		() => classifyClips(document.clips).map((entry) => entry.clip),
-		[document],
-	)
-	const boxes = useMemo(
-		() =>
-			new Map<string, Box | undefined>(
-				clips.map((clip) => [clip.name, clipBoundsFrames(document, clip)]),
-			),
-		[clips, document],
-	)
+	const actions = useMemo(() => modelActions(document), [document])
+	const shown = differencesOnly ? actions.filter(actionHasDifferences) : actions
 
 	return (
 		<div className="flex size-full min-h-0 flex-col">
+			{document.actions !== undefined ? (
+				<div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs">
+					<label className="flex items-center gap-2">
+						<input
+							type="checkbox"
+							checked={differencesOnly}
+							onChange={(event) => setDifferencesOnly(event.target.checked)}
+						/>
+						{t("variants.differencesOnly")}
+					</label>
+					<span className="ml-auto text-muted-foreground">
+						{t("variants.sources", {
+							count: document.modelSources?.length ?? 1,
+						})}
+					</span>
+				</div>
+			) : null}
 			<div
 				ref={containerRef}
 				data-testid="preview-grid"
 				className="flex min-h-0 flex-1 flex-wrap content-start items-start gap-4 overflow-y-auto p-3"
 			>
-				{clips.map((clip) => {
-					const duration = clipDuration(clip)
-					return (
-						<PreviewCell
-							key={clip.name}
-							document={document}
-							clip={clip}
-							timeMs={duration <= 0 ? 0 : elapsed % duration}
-							atlasImages={atlasImages}
-							bounds={boxes.get(clip.name)}
-							displayScale={clipDisplayScale(clip, reducedSize)}
-						/>
-					)
-				})}
+				{shown.map((action) => (
+					<ActionPreview
+						key={action.id}
+						document={document}
+						action={action}
+						elapsed={elapsed}
+						resetSignal={resetSignal}
+						reducedSize={reducedSize}
+						atlasImages={atlasImages}
+					/>
+				))}
+				{shown.length === 0 ? (
+					<p className="text-sm text-muted-foreground">
+						{t("variants.noDifferences")}
+					</p>
+				) : null}
 			</div>
 			<PlaybackBar
 				reducedSize={reducedSize}
@@ -112,7 +119,7 @@ export function PreviewGrid({
 				onToggle={() => setPlaying((current) => !current)}
 				onRestart={restartClock}
 				// `count` selects i18next's plural form for this key.
-				readout={t("preview.clips", { count: clips.length })}
+				readout={t("preview.clips", { count: shown.length })}
 				mode={mode}
 				onMode={onMode}
 				picker={picker}

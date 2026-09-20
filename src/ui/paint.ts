@@ -71,11 +71,12 @@ export const useDeviceRatio = (): number => {
 export const prepareCanvas = (
 	canvas: HTMLCanvasElement,
 	ratio: number,
+	size?: Vec2,
 ): CanvasRenderingContext2D | null => {
 	const context = canvas.getContext("2d")
 	if (context === null) return null
-	const width = canvas.clientWidth
-	const height = canvas.clientHeight
+	const width = size?.[0] ?? canvas.clientWidth
+	const height = size?.[1] ?? canvas.clientHeight
 	const targetWidth = Math.max(1, Math.round(width * ratio))
 	const targetHeight = Math.max(1, Math.round(height * ratio))
 	if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
@@ -88,6 +89,8 @@ export const prepareCanvas = (
 }
 
 export type ClipFrameProps = {
+	/** Explicit canvas size for detached frame captures. */
+	readonly size?: Vec2
 	readonly document: CharacterDocument
 	readonly clip: Clip
 	readonly timeMs: number
@@ -131,7 +134,7 @@ export const paintClipFrame = (
 	canvas: HTMLCanvasElement,
 	props: ClipFrameProps,
 ): void => {
-	const context = prepareCanvas(canvas, props.ratio)
+	const context = prepareCanvas(canvas, props.ratio, props.size)
 	if (context === null) return
 	const snap = (value: number): number =>
 		Math.round(value * props.ratio) / props.ratio

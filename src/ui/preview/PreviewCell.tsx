@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { type ReactNode, useEffect } from "react"
 
 import { clipFrameTotal, DEFAULT_PIXELS_PER_UNIT } from "../../kernel"
 import type { Box } from "../../kernel/preview"
@@ -16,6 +16,10 @@ export type PreviewCellProps = {
 	/** The clip's box across all frames, measured by the grid at 1:1. */
 	readonly bounds: Box | undefined
 	readonly displayScale: number
+	readonly label?: string
+	readonly controls?: ReactNode
+	/** Bounds already scaled into display pixels, shared across every variant. */
+	readonly layoutBounds?: Box
 }
 
 /**
@@ -44,24 +48,30 @@ export function PreviewCell(props: PreviewCellProps) {
 	const { ref, box } = useCanvasBox()
 	const ratio = useDeviceRatio()
 	const { document, clip, timeMs, atlasImages, bounds, displayScale } = props
-	const width = artSide(
-		bounds === undefined ? undefined : bounds[2] * displayScale,
-	)
-	const height = artSide(
-		bounds === undefined ? undefined : bounds[3] * displayScale,
-	)
+	const layout: Box | undefined =
+		props.layoutBounds ??
+		(bounds === undefined
+			? undefined
+			: [
+					bounds[0] * displayScale,
+					bounds[1] * displayScale,
+					bounds[2] * displayScale,
+					bounds[3] * displayScale,
+				])
+	const width = artSide(layout?.[2])
+	const height = artSide(layout?.[3])
 
 	useEffect(() => {
 		const canvas = ref.current
-		if (canvas === null || bounds === undefined) return
+		if (canvas === null || layout === undefined) return
 		// Centre the clip's box on the tile. The bounds are the union of what
 		// every frame draws, so mapping them onto the tile corners places the
 		// current frame without guessing — the painter draws at
 		// `origin + pivot + quad`, which is exactly `origin + bounds`:
 		// `canvas = origin + bounds` by construction.
 		const origin: [number, number] = [
-			(width - bounds[2] * displayScale) / 2 - bounds[0] * displayScale,
-			(height - bounds[3] * displayScale) / 2 - bounds[1] * displayScale,
+			(width - layout[2]) / 2 - layout[0],
+			(height - layout[3]) / 2 - layout[1],
 		]
 		paintClipFrame(canvas, {
 			document,
@@ -77,7 +87,7 @@ export function PreviewCell(props: PreviewCellProps) {
 		clip,
 		timeMs,
 		atlasImages,
-		bounds,
+		layout,
 		ratio,
 		box,
 		ref,
@@ -91,16 +101,17 @@ export function PreviewCell(props: PreviewCellProps) {
 			<canvas
 				ref={ref}
 				style={{ width: `${width}px`, height: `${height}px` }}
-				data-testid={`preview-frame-${clip.name}`}
+				data-testid={`preview-frame-${props.label ?? clip.name}`}
 			/>
 			<figcaption className="flex items-baseline gap-2 text-xs">
-				<span className="truncate" title={clip.name}>
-					{clip.name}
+				<span className="truncate" title={props.label ?? clip.name}>
+					{props.label ?? clip.name}
 				</span>
 				<span className="shrink-0 text-muted-foreground tabular-nums">
 					{clipFrameTotal(clip)}
 				</span>
 			</figcaption>
+			{props.controls}
 		</figure>
 	)
 }

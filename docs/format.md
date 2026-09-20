@@ -195,6 +195,40 @@
 - 缺省（老导出、或源数据没有语音的角色）即没有这个键；消费者按"没有语音"处理。
 - 事件解析仍走 `audio-map.json`：`event` 到 `file` 的映射与 `sounds[]` 共用同一张表。
 
+## 可选模型分组字段
+
+`character.json` 可通过以下字段把多个来源组织为一个模型。缺少这些字段的旧文档仍按每个
+`clip` 一个动作显示；字段不改变底层精灵、变换和声音轨道的含义。
+
+```jsonc
+{
+  "modelSources": [{ "id": "test0001", "name": "Example" }],
+  "actions": [{
+    "id": "action-a",
+    "name": "Action A",
+    "group": "attack",
+    "added": false,
+    "variants": [{
+      "clip": "clip-a",
+      "sources": [{ "characterId": "test0001", "clipName": "original-a" }],
+      "sounds": [{
+        "name": "sound-a",
+        "sources": [{ "characterId": "test0001", "clipName": "original-a" }]
+      }]
+    }]
+  }],
+  "stats": { "actions": 1 } // 其余既有统计字段仍必填
+}
+```
+
+- `modelSources` 的 ID 与 `actions` 的 ID 各自唯一。
+- `variants[].clip` 引用 `clips[].name`，全部 clip 必须恰好分配一次。
+- 每个动作至少一个变体，每个变体至少一个声音版本；声音版本的 `name` 引用 `sounds[].name`。
+- 每组 `sources` 非空，`characterId` 属于 `modelSources`，`clipName` 为非空原始动作名。
+- `added` 标记额外动作；消费者直接使用此标记，不根据名称推断来源关系。
+- `stats.actions` 等于动作数组长度；`stats.clips` 仍表示画面序列数。
+- 预览按各自时长轮播变体，也支持固定一个变体；检视可独立选择声音版本。
+
 ## 3. `audio-map.json`
 
 ```jsonc

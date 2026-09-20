@@ -41,6 +41,7 @@ import type { CharacterDocument, Clip, VoiceEvent } from "../../kernel/types"
 export type FrameInspectorProps = {
 	readonly document: CharacterDocument
 	readonly clip: Clip
+	readonly soundName?: string
 	readonly timeMs: number
 	readonly audioMap: AudioMap
 	readonly audioEnabled: boolean
@@ -79,7 +80,9 @@ export function FrameInspector(props: FrameInspectorProps) {
 	const drawn = frameLayers(document, clip, timeMs)
 	const extended = document.schemaVersion >= 2
 	const due = eventsAtFrame(
-		document.sounds.filter((sound) => sound.name === clip.name),
+		document.sounds.filter(
+			(sound) => sound.name === (props.soundName ?? clip.name),
+		),
 		frame,
 	)
 	const resolved = audioMap.filter((entry) => entry.file !== null)

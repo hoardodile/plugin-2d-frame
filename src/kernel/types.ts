@@ -160,8 +160,31 @@ export type AudioSummary = {
 export type CharacterStats = {
 	readonly sprites: number
 	readonly clips: number
+	readonly actions?: number
 	readonly soundEvents: number
 	readonly maxClipMs: number
+}
+
+export type ClipOrigin = {
+	readonly characterId: string
+	readonly clipName: string
+}
+
+export type ActionVariant = {
+	readonly clip: string
+	readonly sources: readonly ClipOrigin[]
+	readonly sounds: readonly {
+		readonly name: string
+		readonly sources: readonly ClipOrigin[]
+	}[]
+}
+
+export type ModelAction = {
+	readonly id: string
+	readonly name: string
+	readonly group: ClipGroup
+	readonly added: boolean
+	readonly variants: readonly ActionVariant[]
 }
 
 /** What the payload is, independent of which engine produced it. */
@@ -181,6 +204,11 @@ export type CharacterDocument = {
 	readonly atlases: readonly AtlasInfo[]
 	readonly sprites: readonly SpriteRecord[]
 	readonly clips: readonly Clip[]
+	readonly actions?: readonly ModelAction[]
+	readonly modelSources?: readonly {
+		readonly id: string
+		readonly name: string | null
+	}[]
 	readonly sounds: readonly SoundEvent[]
 	/** The character's own sound events; absent on documents exported without them. */
 	readonly voices?: readonly VoiceEvent[]

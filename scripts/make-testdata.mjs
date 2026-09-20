@@ -190,7 +190,7 @@ const document = {
 	layers: [{ name: "layer0", sortingOrder: 0, sortingLayer: 0, z: 0 }],
 	points: [{ name: "layer0", position: [0, 0, 0] }],
 	audio: { events: 3, resolved: 0, unresolved: 3 },
-	stats: { sprites: 4, clips: 3, soundEvents: 2, maxClipMs: 133.33 },
+	stats: { sprites: 4, clips: 3, soundEvents: 3, maxClipMs: 133.33 },
 }
 
 const audioMap = [
@@ -226,11 +226,79 @@ const exportDocument = process.argv.includes("--v2")
 		}
 	: document
 
+/** Optional model fixture; the default keeps exercising legacy documents. */
+const withVariants = (base) => {
+	const attack = base.clips.find((clip) => clip.name === "attack_slash")
+	const alternate = {
+		...attack,
+		name: "attack_alternate",
+		frameCount: attack.frameCount * 2,
+		durationMs: attack.durationMs * 2,
+	}
+	const origin = (clipName, characterId = "test0001") => [
+		{ characterId, clipName },
+	]
+	const sounds = base.clips.map(
+		(clip) =>
+			base.sounds.find((sound) => sound.name === clip.name) ?? {
+				name: clip.name,
+				frames: [],
+			},
+	)
+	return {
+		...base,
+		schemaVersion: 2,
+		modelSources: [
+			{ id: "test0001", name: "Demo Character" },
+			{ id: "test0002", name: "Demo Character" },
+		],
+		clips: [...base.clips, alternate],
+		sounds: [...sounds, { name: alternate.name, frames: [] }],
+		actions: base.clips.map((clip) => ({
+			id: clip.name,
+			name: clip.name,
+			group: clip.group,
+			added: clip.name === "hide",
+			variants: [
+				{
+					clip: clip.name,
+					sources: origin(clip.name),
+					sounds: [{ name: clip.name, sources: origin(clip.name) }],
+				},
+				...(clip.name === "attack_slash"
+					? [
+							{
+								clip: alternate.name,
+								sources: origin(alternate.name, "test0002"),
+								sounds: [
+									{
+										name: alternate.name,
+										sources: origin(alternate.name, "test0002"),
+									},
+								],
+							},
+						]
+					: []),
+			],
+		})),
+		stats: {
+			...base.stats,
+			actions: base.clips.length,
+			clips: base.clips.length + 1,
+			soundEvents: 3,
+			maxClipMs: Math.max(base.stats.maxClipMs, alternate.durationMs),
+		},
+	}
+}
+const finalDocument = process.argv.includes("--variants")
+	? withVariants(exportDocument)
+	: exportDocument
+
 mkdirSync(join(root, "atlas"), { recursive: true })
 writeFileSync(join(root, "atlas", "test-atlas.png"), png)
 writeFileSync(
 	join(root, "character.json"),
-	JSON.stringify(exportDocument, null, "\t"),
+	JSON.stringify(finalDocument, null, "\t"),
 )
 writeFileSync(
 	join(root, "audio-map.json"),

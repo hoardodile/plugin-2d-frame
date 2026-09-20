@@ -6,10 +6,11 @@ import { useMemo, useState } from "react"
 
 import { useTranslation } from "../../i18n"
 import {
+	actionHasDifferences,
 	CATEGORY_ORDER,
-	classifyClips,
 	clipDuration,
 	clipFrameTotal,
+	modelActions,
 } from "../../kernel"
 import type { ClipCategory } from "../../kernel/events"
 import type { CharacterDocument } from "../../kernel/types"
@@ -32,29 +33,56 @@ export function ActionList({ document, value, onChange }: ActionListProps) {
 	const { t } = useTranslation()
 	const [query, setQuery] = useState("")
 	const [category, setCategory] = useState<ClipCategory | "all">("all")
+	const [differencesOnly, setDifferencesOnly] = useState(false)
 
-	const classified = useMemo(() => classifyClips(document.clips), [document])
+	const classified = useMemo(
+		() =>
+			modelActions(document).flatMap((action) => {
+				const clip = document.clips.find(
+					(c) => c.name === action.variants[0]?.clip,
+				)
+				return clip === undefined
+					? []
+					: [{ action, clip, category: action.group }]
+			}),
+		[document],
+	)
 	const rows = useMemo(
 		() =>
 			classified
+				.filter(
+					(entry) => !differencesOnly || actionHasDifferences(entry.action),
+				)
 				.filter((entry) => category === "all" || entry.category === category)
 				.filter((entry) =>
 					query.length === 0
 						? true
-						: entry.clip.name.toLowerCase().includes(query.toLowerCase()),
+						: [
+								entry.action.name,
+								...entry.action.variants.flatMap((v) =>
+									v.sources.map((s) => s.clipName),
+								),
+							].some((name) =>
+								name.toLowerCase().includes(query.toLowerCase()),
+							),
 				)
 				.map((entry) => ({
 					clip: entry.clip,
+					action: entry.action,
 					category: entry.category,
 					frames: clipFrameTotal(entry.clip),
 					durationMs: Math.round(clipDuration(entry.clip)),
 					// `sounds[].name` is the clip the events belong to, and one
 					// frame entry holds every event that fires on that frame.
 					events: document.sounds
-						.filter((sound) => sound.name === entry.clip.name)
+						.filter(
+							(sound) =>
+								sound.name ===
+								(entry.action.variants[0]?.sounds[0]?.name ?? entry.clip.name),
+						)
 						.reduce((total, sound) => total + sound.frames.length, 0),
 				})),
-		[classified, category, query, document],
+		[classified, category, query, document, differencesOnly],
 	)
 
 	return (
@@ -71,6 +99,16 @@ export function ActionList({ document, value, onChange }: ActionListProps) {
 					onCommit={setQuery}
 					placeholder={t("inspect.search")}
 				/>
+				{document.actions !== undefined ? (
+					<label className="flex items-center gap-2 text-xs">
+						<input
+							type="checkbox"
+							checked={differencesOnly}
+							onChange={(event) => setDifferencesOnly(event.target.checked)}
+						/>
+						{t("variants.differencesOnly")}
+					</label>
+				) : null}
 				<div className="flex flex-wrap gap-1">
 					<button
 						type="button"
@@ -114,19 +152,22 @@ export function ActionList({ document, value, onChange }: ActionListProps) {
 				<div className="flex flex-col gap-0.5 px-2 pb-3">
 					{rows.map((row) => (
 						<button
-							key={row.clip.name}
+							key={row.action.id}
 							type="button"
-							aria-pressed={row.clip.name === value}
+							aria-pressed={row.action.id === value}
 							className={cn(
 								"flex h-chip w-full min-w-0 items-center gap-2 rounded-sm px-2 text-left text-xs",
-								row.clip.name === value
+								row.action.id === value
 									? "bg-secondary text-foreground"
 									: "text-muted-foreground hover:bg-muted hover:text-foreground",
 							)}
-							onClick={() => onChange(row.clip.name)}
+							onClick={() => onChange(row.action.id)}
 						>
-							<span className="min-w-0 flex-1 truncate" title={row.clip.name}>
-								{row.clip.name}
+							<span className="min-w-0 flex-1 truncate" title={row.action.name}>
+								{row.action.name}
+								{row.action.variants.length > 1
+									? ` · ${row.action.variants.length}`
+									: ""}
 							</span>
 							<span className="w-8 shrink-0 text-right tabular-nums">
 								{row.frames}

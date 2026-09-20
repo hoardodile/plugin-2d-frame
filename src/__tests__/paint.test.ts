@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest"
 
 import type { Affine, CharacterDocument, Clip } from "../kernel/types"
+import { captureFrame } from "../ui/cover"
 import { paintClipFrame } from "../ui/paint"
 
 afterEach(() => vi.restoreAllMocks())
@@ -81,6 +82,41 @@ const paint = (matrix: Affine, ratio: number, pixelsPerUnit: number) => {
 	})
 	return context
 }
+
+it("captures at source density with tight bounds and preserves joined pieces", () => {
+	const context = paint([1, 0, 0, 1, 0, 0], 1, 100)
+	const doc = splitDocument([1, 0, 0, 1, 2, 3])
+	const lowDensity = {
+		...doc,
+		sprites: doc.sprites.map((s) => ({ ...s, pixelsToUnit: 80 })),
+	}
+	const output = vi
+		.spyOn(HTMLCanvasElement.prototype, "toDataURL")
+		.mockImplementation(function (this: HTMLCanvasElement) {
+			expect(this.width).toBe(50)
+			expect(this.height).toBe(20)
+			return "data:image/png;base64,cG5n"
+		})
+	context.drawImage.mockClear()
+	expect(
+		captureFrame({
+			document: lowDensity,
+			clip: doc.clips[0]!,
+			timeMs: 0,
+			atlasImages: new Map([["atlas.png", new Image()]]),
+			displayScale: 0.8,
+		}),
+	).toBe("data:image/png;base64,cG5n")
+	expect(output).toHaveBeenCalledWith("image/png")
+	expect(context.drawImage.mock.calls.map((args) => args.slice(-2))).toEqual([
+		[30, 20],
+		[20, 20],
+	])
+	expect(context.translate.mock.calls.slice(-2)).toEqual([
+		[0, 0],
+		[30, 0],
+	])
+})
 
 it.each([
 	[1, 100, 1],

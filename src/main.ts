@@ -15,6 +15,7 @@ type CharacterDocumentShape = {
 	readonly stats?: {
 		readonly sprites?: number
 		readonly clips?: number
+		readonly actions?: number
 		readonly soundEvents?: number
 		readonly maxClipMs?: number
 	}
@@ -145,7 +146,7 @@ async function buildSourceMeta(
 			id: document?.id ?? api.context.detect?.id ?? "",
 			name: document?.name ?? null,
 			sprites: document?.stats?.sprites ?? 0,
-			clips: document?.stats?.clips ?? 0,
+			clips: document?.stats?.actions ?? document?.stats?.clips ?? 0,
 			soundEvents: document?.stats?.soundEvents ?? 0,
 			maxClipMs: document?.stats?.maxClipMs ?? 0,
 			atlases: document?.atlases?.length ?? 0,

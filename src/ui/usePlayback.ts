@@ -22,6 +22,7 @@ export type PlaybackOptions = {
 	readonly emit?: (due: DueEvent) => void
 	/** Wrap at the clip's end instead of stopping on its last frame. */
 	readonly loop?: boolean
+	readonly soundName?: string
 }
 
 export type Playback = {
@@ -39,6 +40,7 @@ export const usePlayback = ({
 	clip,
 	emit,
 	loop = true,
+	soundName = clip.name,
 }: PlaybackOptions): Playback => {
 	const [timeMs, setTimeMs] = useState(0)
 	const [playing, setPlaying] = useState(true)
@@ -59,7 +61,7 @@ export const usePlayback = ({
 	useEffect(() => {
 		commit(0)
 		initialEventsPending.current = true
-	}, [clip, commit])
+	}, [clip, soundName, commit])
 
 	useEffect(() => {
 		if (!playing || duration <= 0) return undefined
@@ -72,7 +74,7 @@ export const usePlayback = ({
 			const next = wrapTime(from + delta, duration, loop)
 			if (emit !== undefined) {
 				for (const due of dueEvents(
-					document.sounds.filter((sound) => sound.name === clip.name),
+					document.sounds.filter((sound) => sound.name === soundName),
 					clip,
 					initialEventsPending.current ? -0.001 : from,
 					next,
@@ -86,7 +88,7 @@ export const usePlayback = ({
 		}
 		handle = requestAnimationFrame(tick)
 		return () => cancelAnimationFrame(handle)
-	}, [playing, duration, loop, document, clip, emit, commit])
+	}, [playing, duration, loop, document, clip, soundName, emit, commit])
 
 	const restart = useCallback(() => {
 		commit(0)

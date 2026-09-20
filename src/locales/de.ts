@@ -1,4 +1,20 @@
 export default {
+	"cover.capture": "Aktuelles Bild als Cover",
+	"cover.hint": "Coverbereich durch Ziehen wählen und speichern.",
+	"cover.save": "Cover speichern",
+	"cover.saving": "Wird gespeichert…",
+	"cover.error":
+		"Cover konnte nicht gespeichert werden. Bitte erneut versuchen.",
+	"variants.chooseAction": "Variante für {{name}}",
+	"variants.cycle": "Varianten nacheinander",
+	"variants.number": "Variante {{index}}",
+	"variants.differencesOnly": "Nur Unterschiede",
+	"variants.noDifferences":
+		"Dieses Modell enthält keine abweichenden Aktionen.",
+	"variants.sources": "Quellen: {{count}}",
+	"variants.choose": "Variante wählen",
+	"variants.audio": "Tonfassung",
+	"variants.origins": "Ursprüngliche Aktionen",
 	"common.close": "Schließen",
 	"mode.preview": "Vorschau",
 	"mode.inspect": "Prüfen",

@@ -65,9 +65,11 @@ if (!existsSync(dataDir)) {
 const isCharacterFolder = existsSync(join(dataDir, "character.json"))
 const charactersDir = isCharacterFolder
 	? dataDir
-	: existsSync(join(dataDir, "characters"))
-		? join(dataDir, "characters")
-		: dataDir
+	: existsSync(join(dataDir, "models", "catalog.json"))
+		? join(dataDir, "models")
+		: existsSync(join(dataDir, "characters"))
+			? join(dataDir, "characters")
+			: dataDir
 const collectionDir = existsSync(join(charactersDir, "catalog.json"))
 	? charactersDir
 	: dataDir
