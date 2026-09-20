@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1](https://github.com/hoardodile/plugin-2d-frame/compare/v0.2.0...v0.2.1) (2026-09-20)
+
+### Bug Fixes
+
+* **player:** defer optional audio loading and reuse visual assets ([b771e64](https://github.com/hoardodile/plugin-2d-frame/commit/b771e644df04eddaf6422bcec86c2b2cedfb2bd1))
+
 ## [0.2.0](https://github.com/hoardodile/plugin-2d-frame/compare/v0.1.3...v0.2.0) (2026-09-20)
 
 ### Features
